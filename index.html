@@ -1,0 +1,1551 @@
+<!--
+  VitalPulse Sync
+  © 2026 Humberto Hernández / HJaime Studios. Todos los derechos reservados. / All rights reserved.
+  Este código y diseño son propiedad de Humberto Hernández (HJaime Studios). Compartido de forma
+  confidencial con fines de evaluación (financiamiento, asesoría, colaboración).
+  No copiar, distribuir ni usar como base de otro producto sin autorización escrita.
+-->
+<!DOCTYPE html>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1B2A4A">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="VitalPulse">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="icon" href="./icon-192.png">
+<title>VitalPulse Sync</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+:root {
+  --teal:#00BFA5; --teal-d:#009688; --indigo:#5B4FE0; --red:#C62828; --red-d:#B71C1C;
+  --blue:#1565C0; --navy:#1B2A4A; --amber:#E65100; --green:#2E7D32;
+  --yellow-bg:#FFF8E1; --red-bg:#FFEBEE;
+  --bg:#F5F7FA; --surf:#FFFFFF; --surf2:#F0F4F8; --text:#1B2A4A; --text2:#6B7A99; --text3:#A0ABBE;
+  --bdr:#E2E8F0; --shad:0 2px 8px rgba(0,0,0,.08);
+}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0F1923;--surf:#1A2535;--surf2:#1F2E42;--text:#F0F4F8;--text2:#8899B0;--text3:#5A6A80;
+  --bdr:#2A3A50;--shad:0 2px 8px rgba(0,0,0,.35);--yellow-bg:rgba(255,179,0,.12);--red-bg:rgba(198,40,40,.12);
+}}
+:root[data-theme="dark"]{
+  --bg:#0F1923;--surf:#1A2535;--surf2:#1F2E42;--text:#F0F4F8;--text2:#8899B0;--text3:#5A6A80;
+  --bdr:#2A3A50;--shad:0 2px 8px rgba(0,0,0,.35);--yellow-bg:rgba(255,179,0,.12);--red-bg:rgba(198,40,40,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:Inter,sans-serif;}
+body{background:var(--bg);display:flex;flex-direction:column;align-items:center;min-height:100dvh;padding:14px;gap:10px;}
+
+/* Dev controls */
+#dev-ctrl{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;max-width:480px;align-items:center;}
+.ctl-btn{padding:5px 13px;border-radius:18px;border:1.5px solid var(--bdr);background:var(--surf);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;}
+.ctl-btn.on{background:var(--navy);color:#fff;border-color:var(--navy);}
+.ctl-btn.on-c{background:var(--red-d);color:#fff;border-color:var(--red-d);}
+.ctl-sep{font-size:11px;color:var(--text2);}
+.ctl-sel{padding:5px 10px;border-radius:18px;border:1.5px solid var(--bdr);background:var(--surf);color:var(--text);font-size:12px;cursor:pointer;font-family:Inter,sans-serif;}
+
+/* Phone shell */
+#app-root{
+  width:390px;height:min(844px,calc(100dvh - 150px));max-width:100vw;max-height:100dvh;
+  background:var(--bg);border-radius:40px;overflow:hidden;position:relative;
+  box-shadow:0 22px 60px rgba(0,0,0,.2),0 0 0 2px var(--bdr);
+  display:flex;flex-direction:column;
+}
+@media(max-width:430px){
+  #app-root{border-radius:0;box-shadow:none;width:100vw;height:100dvh;}
+  #dev-ctrl{display:none;}
+  body{padding:0;}
+}
+
+/* Scrollable screen area */
+.scr{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+.scr::-webkit-scrollbar{display:none;}
+.pad{padding:16px;display:flex;flex-direction:column;gap:13px;padding-bottom:20px;}
+
+/* Header */
+.hdr{background:var(--surf);padding:13px 18px 11px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:10px;}
+.hdr-logo{font-size:16px;font-weight:800;color:var(--teal);letter-spacing:-.3px;white-space:nowrap;}
+.hdr-title{font-size:16px;font-weight:700;color:var(--text);}
+.seg{display:flex;border-radius:20px;overflow:hidden;border:1.5px solid var(--indigo);flex-shrink:0;}
+.seg-btn{padding:4px 11px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--indigo);font-family:Inter,sans-serif;white-space:nowrap;}
+.seg-btn.on{background:var(--indigo);color:#fff;}
+
+/* 5-tab bar */
+.tab-bar{display:flex;background:var(--surf);border-top:1px solid var(--bdr);flex-shrink:0;}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:7px 2px 9px;cursor:pointer;border:none;background:none;color:var(--text2);font-size:9px;font-weight:600;font-family:Inter,sans-serif;gap:3px;}
+.tab.on{color:var(--indigo);}
+.tab svg{width:22px;height:22px;}
+
+/* Registrar — raised center button built into the tab bar itself, so it's
+   always visible but lives in reserved chrome space and never covers content */
+.tab-fab{position:relative;}
+.fab-circle{width:34px;height:34px;border-radius:50%;background:var(--teal);color:#fff;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:400;line-height:1;box-shadow:0 3px 8px rgba(0,191,165,.4);margin-top:-6px;flex-shrink:0;}
+.tab-fab span:last-child{color:var(--teal);font-weight:700;}
+.tab-fab.on .fab-circle{background:var(--teal-d);}
+
+/* Tappable hint on cards */
+.tap-hint{color:var(--text3);font-size:15px;flex-shrink:0;}
+
+/* Cards */
+.card{background:var(--surf);border-radius:16px;padding:16px;box-shadow:var(--shad);}
+.vgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.vcard{background:var(--surf);border-radius:14px;padding:14px;box-shadow:var(--shad);cursor:pointer;}
+.vcard:active{opacity:.82;}
+.vcl{font-size:10px;font-weight:700;color:var(--text2);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px;}
+.vcv{font-size:25px;font-weight:800;color:var(--text);line-height:1;font-variant-numeric:tabular-nums;}
+.vcu{font-size:11px;color:var(--text2);margin-top:3px;}
+.bdg{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;margin-top:6px;}
+
+/* Alerts */
+.alert{border-radius:12px;padding:11px 13px;display:flex;align-items:flex-start;gap:9px;}
+.aw{background:var(--yellow-bg);border:1px solid #FFB300;}
+.ad{background:var(--red-bg);border:1px solid var(--red);}
+
+/* Stepper */
+.step{display:flex;align-items:center;border-radius:14px;overflow:hidden;border:1.5px solid var(--bdr);background:var(--surf2);}
+.step-b{width:44px;height:48px;font-size:24px;font-weight:300;cursor:pointer;border:none;background:transparent;color:var(--teal);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.step-v{flex:1;text-align:center;font-size:22px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums;line-height:1;}
+.step-u{font-size:10px;color:var(--text2);text-align:center;margin-top:2px;}
+
+/* Buttons */
+.btn-p{background:var(--indigo);color:#fff;border:none;border-radius:14px;padding:14px;font-size:15px;font-weight:700;width:100%;cursor:pointer;font-family:Inter,sans-serif;}
+.btn-p.teal{background:var(--teal);}
+.btn-p:active{opacity:.9;}
+.btn-s{background:transparent;color:var(--text2);border:1.5px solid var(--bdr);border-radius:14px;padding:12px;font-size:14px;font-weight:500;width:100%;cursor:pointer;font-family:Inter,sans-serif;}
+.btn-gh{background:transparent;border:none;color:var(--indigo);font-size:14px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;padding:8px 0;}
+
+/* Input */
+.inp{background:var(--surf2);border:1.5px solid var(--bdr);border-radius:12px;padding:11px 15px;font-size:15px;color:var(--text);width:100%;font-family:Inter,sans-serif;outline:none;}
+.inp:focus{border-color:var(--teal);}
+.inp-t{background:var(--surf2);border:1.5px solid var(--bdr);border-radius:12px;padding:10px;font-size:24px;font-weight:800;color:var(--text);font-family:Inter,sans-serif;outline:none;text-align:center;width:100%;}
+.inp-t:focus{border-color:var(--teal);}
+
+/* Modal */
+.modal-bg{position:absolute;inset:0;background:rgba(0,0,0,.55);z-index:200;display:flex;flex-direction:column;justify-content:flex-end;}
+.sheet{background:var(--surf);border-radius:24px 24px 0 0;padding:22px 20px;display:flex;flex-direction:column;gap:14px;max-height:88%;overflow-y:auto;}
+.sheet::-webkit-scrollbar{display:none;}
+.sheetT{font-size:17px;font-weight:700;color:var(--text);}
+
+/* Section label */
+.slbl{font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.5px;text-transform:uppercase;}
+
+/* Row */
+.row{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--bdr);}
+.row:last-child{border-bottom:none;}
+
+/* Avatar */
+.av{border-radius:50%;background:var(--teal);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
+/* Onboarding */
+.ob{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;gap:18px;}
+
+/* Adherence bar */
+.ab{height:7px;border-radius:4px;background:var(--surf2);overflow:hidden;}
+.af{height:100%;border-radius:4px;background:var(--teal);}
+.af.warn{background:var(--amber);}
+
+/* Med menu */
+.med-menu{position:absolute;right:8px;top:38px;background:var(--surf);border:1px solid var(--bdr);border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,.14);z-index:101;overflow:hidden;min-width:120px;}
+.mmi{display:block;width:100%;padding:11px 15px;font-size:13px;font-weight:500;color:var(--text);cursor:pointer;border:none;background:none;text-align:left;font-family:Inter,sans-serif;}
+.mmi:hover{background:var(--surf2);}
+.mmi.del{color:var(--red);}
+
+/* Profile menu rows */
+.hdr-back{display:flex;align-items:center;gap:8px;min-width:0;}
+.back-btn{width:30px;height:30px;border-radius:50%;border:none;background:var(--surf2);color:var(--indigo);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:Inter,sans-serif;}
+.menu-row{display:flex;align-items:center;gap:12px;padding:14px 4px;border-bottom:1px solid var(--bdr);cursor:pointer;}
+.menu-row:last-child{border-bottom:none;}
+.menu-ic{width:40px;height:40px;border-radius:12px;background:var(--surf2);display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
+.menu-tx{flex:1;min-width:0;}
+.menu-tt{font-size:14px;font-weight:700;color:var(--text);}
+.menu-sb{font-size:12px;color:var(--text2);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.menu-chev{font-size:18px;color:var(--text3);flex-shrink:0;}
+
+/* "Moved from..." annotation callout */
+.note{border:1.5px dashed rgba(91,79,224,.45);border-radius:16px;position:relative;padding-top:24px;}
+.note-tag{position:absolute;top:-11px;left:14px;background:var(--indigo);color:#fff;font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:8px;}
+</style>
+
+<div id="dev-ctrl">
+  <select class="ctl-sel" id="scr-sel" onchange="gotoScr(this.value)">
+    <option value="dashboard">Dashboard</option>
+    <option value="history">Historia</option>
+    <option value="medications">Medicamentos</option>
+    <option value="reports">Reportes</option>
+    <option value="profile">Perfil</option>
+    <option value="log">Registrar (modal)</option>
+    <option value="onboarding">Onboarding</option>
+    <option value="login">Login</option>
+    <option value="caregiverFeed">Caregiver Feed</option>
+  </select>
+  <span class="ctl-sep">Estado:</span>
+  <button class="ctl-btn on" id="btn-n" onclick="setDemo('n')">Normal</button>
+  <button class="ctl-btn" id="btn-e" onclick="setDemo('e')">Sin datos</button>
+  <button class="ctl-btn" id="btn-c" onclick="setDemo('c')">Crisis</button>
+  <span class="ctl-sep">|</span>
+  <button class="ctl-btn" id="btn-lt" onclick="setTheme('light')">☀️</button>
+  <button class="ctl-btn" id="btn-dk" onclick="setTheme('dark')">🌙</button>
+</div>
+<div id="app-root"></div>
+
+<script>
+// ─── State ──────────────────────────────────────────────────────────────────
+const DEFAULT_STATE={
+  screen:'dashboard',obStep:1,profileView:'menu',symToggle:false,logBackup:null,
+  conditions:{hta:true,dm:true,other:false},otherDiagnosis:'',
+  amMinutes:8*60,pmMinutes:20*60,
+  sys:132,dia:84,hr:72,glucose:108,glucoseGoal:130,glucoseGoalPost:180,
+  glucoseContext:'ayunas',historyGlCtx:'ayunas',
+  readingMinutes:7*60+32,lang:'ES',glucoseUnit:'mgdl',trendMetric:'pa',
+  symptoms:{headache:false,dizzy:false,blur:true,palp:false,fatigue:false,fever:false,none:false},
+  medTaken:{m1:[true,false],m2:[true,true],m3:[true]},
+  customMeds:[
+    {id:'m1',name:'Losartán',dose:'50mg',timesPerDay:2},
+    {id:'m2',name:'Metformina',dose:'850mg',timesPerDay:2},
+    {id:'m3',name:'Amlodipino',dose:'5mg',timesPerDay:1},
+  ],
+  openMedMenuId:null,editingMedId:null,deleteMedId:null,
+  showAddMed:false,newMedName:'',newMedDose:'',newMedTimesPerDay:2,
+  range:'Semana',showPaywall:false,premium:false,trialActive:true,trialDaysLeft:23,
+  caregiverCodeInput:'',codeErrorShown:false,
+  caregivers:[{name:'Ana García',initials:'AG'},{name:'Luis Pérez',initials:'LP'}],
+  inviteCode:'VP-4821',codeCopied:false,
+  reportPeriod:'weekly',reportGenerated:false,viewReportIdx:0,
+  weeklyReports:null,monthlyReport:null,sixMonthReport:null,shareChannel:null,
+  reminderRecipient:'both',name:'Roberto García',
+  dark:false,noData:false,crisis:false,notes:'',
+};
+let s={...DEFAULT_STATE};
+
+// ─── Persistence ────────────────────────────────────────────────────────────
+// This published page has its own origin, so localStorage here is private to
+// whoever is viewing it in their own browser and survives a reload — but only
+// on that device. Reads/writes are wrapped in try/catch: private browsing, a
+// blocked store, or a corrupt payload should never break the app — it just
+// falls back to the demo defaults above.
+const STORAGE_KEY='vitalpulse-sync-state-v1';
+// Fields that only make sense for the CURRENT visit — a modal left open, a
+// half-typed invite code, the demo-data toggle — are never restored, so a
+// fresh load always starts clean on Inicio even though the patient's actual
+// data (readings, medications, diagnoses, settings) comes back.
+const EPHEMERAL_FIELDS=['screen','logBackup','showPaywall','showAddMed','editingMedId',
+  'deleteMedId','openMedMenuId','newMedName','newMedDose','newMedTimesPerDay',
+  'caregiverCodeInput','codeErrorShown','codeCopied','shareChannel','reportGenerated',
+  'noData','crisis'];
+(function loadPersistedState(){
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const saved=JSON.parse(raw);
+      if(saved&&typeof saved==='object')Object.assign(s,saved);
+    }
+  }catch(e){/* private browsing / storage blocked / corrupt payload — keep demo defaults */}
+  EPHEMERAL_FIELDS.forEach(k=>{s[k]=DEFAULT_STATE[k];});
+  // Drop any key that isn't part of the current shape — e.g. a field like the old
+  // logTurn that a past version stored and later versions removed. Without this,
+  // a stale key from an old save lingers in localStorage forever (harmless since
+  // nothing reads it, but it's dead weight that's easy to just not carry forward).
+  Object.keys(s).forEach(k=>{if(!(k in DEFAULT_STATE))delete s[k];});
+})();
+function persistState(){
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(s));}catch(e){/* storage full/blocked — just won't survive a reload */}
+}
+
+const root=document.getElementById('app-root');
+
+// Tracks the scrollable .scr container's scroll position across re-renders, so a
+// setState() that doesn't change screen (e.g. picking a share channel in Reportes)
+// doesn't jump back to the top — root.innerHTML= otherwise discards the old .scr
+// node on every render and any scroll position is lost with it.
+let __scrKey=null,__scrollTop=0;
+
+function setState(up){
+  if(typeof up==='function'){Object.assign(s,up({...s}));}else{Object.assign(s,up);}
+  persistState();
+  render();
+}
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+const tx=(es,en)=>s.lang==='ES'?es:en;
+const isMmol=()=>s.glucoseUnit==='mmol';
+const GFACTOR=18.0182;
+const mgToMmol=v=>Math.round(v/GFACTOR*10)/10;
+const mmolToMg=v=>Math.round(v*GFACTOR);
+const fmtGl=v=>isMmol()?mgToMmol(v).toFixed(1):String(Math.round(v));
+const glU=()=>isMmol()?'mmol/L':'mg/dL';
+const fmtTime=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+// 12-hour display with AM/PM — used everywhere the app SHOWS a time to the patient.
+// fmtTime (24h) stays only for the value= of native <input type="time">, which the
+// HTML spec requires in 24h regardless of how the browser then displays it.
+const fmtTime12=m=>{m=((m%1440)+1440)%1440;let h=Math.floor(m/60);const mm=m%60;const ap=h<12?'AM':'PM';h=h%12;if(h===0)h=12;return`${h}:${String(mm).padStart(2,'0')} ${ap}`;};
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+// Clinical engine — per README
+function classifyBP(sys,dia){
+  if(sys>=180||dia>=110)return{k:'crisis',lbl:tx('CRISIS','CRISIS'),bg:'#B71C1C',c:'#fff'};
+  if(sys>=160||dia>=100)return{k:'s2',lbl:tx('Etapa 2','Stage 2'),bg:'#C62828',c:'#fff'};
+  if(sys>=140||dia>=90) return{k:'s1',lbl:tx('Etapa 1','Stage 1'),bg:'#E65100',c:'#fff'};
+  if(sys>=120||dia>=80) return{k:'elev',lbl:tx('Elevada','Elevated'),bg:'#F9A825',c:'#1B2A4A'};
+  return{k:'normal',lbl:tx('Normal','Normal'),bg:'#2E7D32',c:'#fff'};
+}
+// Personal goal for a given measurement context — ayunas (fasting) defaults near
+// the ADA fasting target, posprandial (1-2h post-meal) defaults higher since blood
+// glucose normally rises after eating. Both are independently editable in Perfil.
+function glGoalFor(ctx){return ctx==='post'?s.glucoseGoalPost:s.glucoseGoal;}
+function glCtxLabel(ctx){return ctx==='post'?tx('Posprandial','Post-meal'):tx('Ayunas','Fasting');}
+// Estimated HbA1c from a period's average glucose (ADAG study formula, the same
+// one glucometer/CGM apps use for "estimated A1C"): eAG(mg/dL) = 28.7×A1C − 46.7,
+// solved for A1C. Uses the simple average of the period's ayunas/posprandial
+// averages as a proxy for overall glycemic control — it's an ESTIMATE from
+// self-reported averages, not a lab HbA1c, and is labeled/captioned as such
+// everywhere it's shown.
+function estHbA1c(glAyunas,glPost){
+  const avgMg=(glAyunas+glPost)/2;
+  return((avgMg+46.7)/28.7).toFixed(1);
+}
+// Fixed "very high" ceiling per context (ADA) — but a physician can raise a
+// patient's personal goal above it (e.g. a relaxed goal for a frail elderly
+// patient), and the ceiling must never sit BELOW the goal that defines "ok" —
+// otherwise a reading inside the patient's own goal would get flagged as the
+// most severe category. Clamping the ceiling to at least goal+1 keeps the
+// ok → hi → vh → crisis bands always in that order, whatever the goal is set to.
+function glVhBoundFor(ctx){
+  const fixed=ctx==='post'?250:180;
+  return Math.max(fixed,glGoalFor(ctx)+1);
+}
+// Hypoglycemia and crisis thresholds are clinical constants independent of context.
+// The "high" floor differs by context because a normal post-meal reading is
+// expected to run higher than a normal fasting one (ADA) — but "high" also
+// fires whenever a reading exceeds the patient's own goal, whichever is lower.
+function classifyGl(v,ctx){
+  const goal=glGoalFor(ctx);
+  const hiFloor=ctx==='post'?140:125;
+  if(v<70) return{k:'hypo',lbl:tx('Hipoglicemia','Hypoglycemia'),bg:'#C62828',c:'#fff'};
+  if(v>300)return{k:'crisis',lbl:tx('CRISIS','CRISIS'),bg:'#B71C1C',c:'#fff'};
+  if(v>glVhBoundFor(ctx))return{k:'vh',lbl:tx('Muy alta','Very high'),bg:'#C62828',c:'#fff'};
+  if(v>goal||v>hiFloor)return{k:'hi',lbl:tx('Alta','High'),bg:'#E65100',c:'#fff'};
+  return{k:'ok',lbl:tx('Meta ✓','Goal ✓'),bg:'#2E7D32',c:'#fff'};
+}
+function classifyHR(hr){
+  if(hr<40||hr>150)return{k:'crisis',lbl:tx('CRISIS','CRISIS'),bg:'#B71C1C',c:'#fff'};
+  if(hr<60)return{k:'brady',lbl:tx('Bradicardia','Bradycardia'),bg:'#E65100',c:'#fff'};
+  if(hr>100)return{k:'tachy',lbl:tx('Taquicardia','Tachycardia'),bg:'#E65100',c:'#fff'};
+  return{k:'normal',lbl:tx('Normal','Normal'),bg:'#2E7D32',c:'#fff'};
+}
+function bdg(b){return`<span class="bdg" style="background:${b.bg};color:${b.c}">${b.lbl}</span>`;}
+// Alert-feed severity (Familiar/Cuidador) — maps a classification key to the
+// feed's 3-tier severity ('d' danger/red, 'w' caution/amber, 'ok' normal/teal),
+// matching the same color convention already used for the badges (bdg) and the
+// Dashboard's alert cards, so a glucose or BP alert in the caregiver feed is
+// exactly as urgent-looking as the value actually is — not a flat amber for
+// everything short of full crisis.
+function alertSevBP(k){if(k==='crisis'||k==='s2'||k==='s1')return'd';if(k==='elev')return'w';return'ok';}
+function alertSevGl(k){if(k==='crisis'||k==='vh'||k==='hypo')return'd';if(k==='hi')return'w';return'ok';}
+
+function greeting(){
+  const h=new Date().getHours();
+  if(h<12)return tx('Buenos días','Good morning');
+  if(h<19)return tx('Buenas tardes','Good afternoon');
+  return tx('Buenas noches','Good evening');
+}
+
+function computeMeds(){
+  return s.customMeds.map(cm=>{
+    const taken=s.medTaken[cm.id]||Array(cm.timesPerDay).fill(false);
+    const slots=Array.from({length:cm.timesPerDay},(_,i)=>({
+      label:cm.timesPerDay===1?tx('Dosis única','Single dose'):
+            i===0?tx('Mañana','Morning'):i===1?tx('Tarde/Noche','Eve/Night'):`#${i+1}`,
+      check:!!taken[i]
+    }));
+    return{...cm,slots,allTaken:slots.every(sl=>sl.check),anyMissed:slots.some(sl=>!sl.check)};
+  });
+}
+
+// Sparkline SVG (7-day BP)
+function sparkSVG(data,w=272,h=54){
+  if(!data||!data.length)return`<div style="height:${h}px;display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:12px">${tx('Sin datos','No data')}</div>`;
+  const n=data.length,yMin=50,yMax=200;
+  const toY=v=>h-((Math.max(yMin,Math.min(yMax,v))-yMin)/(yMax-yMin))*h;
+  const toX=(i)=>(n<2?w/2:i/(n-1)*w).toFixed(1);
+  const sy=data.map((d,i)=>`${toX(i)},${toY(d.sys).toFixed(1)}`).join(' ');
+  const dy=data.map((d,i)=>`${toX(i)},${toY(d.dia).toFixed(1)}`).join(' ');
+  const gy=toY(130).toFixed(1);
+  const last=data[data.length-1];
+  return`<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="overflow:visible;display:block">
+    <line x1="0" y1="${gy}" x2="${w}" y2="${gy}" stroke="#2E7D32" stroke-width="1.2" stroke-dasharray="5,4" opacity=".5"/>
+    <polyline points="${sy}" fill="none" stroke="#C62828" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+    <polyline points="${dy}" fill="none" stroke="#1565C0" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${toX(n-1)}" cy="${toY(last.sys).toFixed(1)}" r="3.5" fill="#C62828"/>
+    <circle cx="${toX(n-1)}" cy="${toY(last.dia).toFixed(1)}" r="3.5" fill="#1565C0"/>
+  </svg>`;
+}
+
+// Single-series sparkline (7-day Glucosa or FC), optional goal line
+function sparkSingleSVG(data,w,h,color,yMin,yMax,goalVal){
+  if(!data||!data.length)return`<div style="height:${h}px;display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:12px">${tx('Sin datos','No data')}</div>`;
+  const n=data.length;
+  const toY=v=>h-((Math.max(yMin,Math.min(yMax,v))-yMin)/(yMax-yMin))*h;
+  const toX=(i)=>(n<2?w/2:i/(n-1)*w).toFixed(1);
+  const pts=data.map((d,i)=>`${toX(i)},${toY(d).toFixed(1)}`).join(' ');
+  const last=data[data.length-1];
+  const goalLine=goalVal!=null?`<line x1="0" y1="${toY(goalVal).toFixed(1)}" x2="${w}" y2="${toY(goalVal).toFixed(1)}" stroke="#2E7D32" stroke-width="1.2" stroke-dasharray="5,4" opacity=".5"/>`:'';
+  return`<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="overflow:visible;display:block">
+    ${goalLine}
+    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${toX(n-1)}" cy="${toY(last).toFixed(1)}" r="3.5" fill="${color}"/>
+  </svg>`;
+}
+
+// Which vital modules apply to this patient's diagnoses. An unrecognized/free-text
+// condition alone ("Otra condición") doesn't hide anything — we only hide a module
+// when we positively know it doesn't apply (the opposite box is unchecked).
+function vitalsVisibility(){
+  const none=!s.conditions.hta&&!s.conditions.dm;
+  return{showBP:s.conditions.hta||none,showGl:s.conditions.dm||none};
+}
+function diagLabel(){
+  const parts=[];
+  if(s.conditions.hta)parts.push('HTA');
+  if(s.conditions.dm)parts.push(tx('Diabetes','Diabetes'));
+  if(s.conditions.other&&s.otherDiagnosis)parts.push(s.otherDiagnosis);
+  return parts.length?parts.join(' + '):tx('Sin diagnóstico','No diagnosis');
+}
+
+// History line chart
+// Shared axis layer for History charts: numeric gridlines on the left, an optional
+// shaded reference band (e.g. AHA normal HR range), and an optional dashed threshold line.
+function refLineSVG(marginL,w,h,yMin,yMax,refLine){
+  if(!refLine)return'';
+  const toY=v=>h-((v-yMin)/(yMax-yMin))*h;
+  const y=toY(refLine.value).toFixed(1);
+  return`<line x1="${marginL}" y1="${y}" x2="${w}" y2="${y}" stroke="${refLine.color}" stroke-width="1.3" stroke-dasharray="4,3" opacity=".8"/><text x="${w}" y="${(+y-4).toFixed(1)}" text-anchor="end" font-size="9.5" font-weight="700" fill="${refLine.color}">${refLine.label}</text>`;
+}
+// deferRefLine: cuando es true, axisLayer dibuja los ejes/banda pero NO la línea+etiqueta
+// de referencia — el llamador la dibuja aparte con refLineSVG(), en el orden que necesite
+// (ver glucSVG: así la etiqueta "Meta X" se pinta DESPUÉS de la línea de datos, no antes,
+// y nunca queda tapada por ella).
+function axisLayer(marginL,w,h,yMin,yMax,yTicks,band,refLine,deferRefLine){
+  const toY=v=>h-((v-yMin)/(yMax-yMin))*h;
+  let out='';
+  if(band){
+    const y0=toY(band.to),y1=toY(band.from);
+    out+=`<rect x="${marginL}" y="${y0.toFixed(1)}" width="${w-marginL}" height="${(y1-y0).toFixed(1)}" fill="${band.color||'#2E7D32'}" opacity=".12"/>`;
+  }
+  yTicks.forEach(t=>{
+    const y=toY(t).toFixed(1);
+    out+=`<line x1="${marginL}" y1="${y}" x2="${w}" y2="${y}" stroke="var(--bdr)" stroke-width="1"/>`;
+    out+=`<text x="${marginL-6}" y="${(+y+3.5).toFixed(1)}" text-anchor="end" font-size="9.5" fill="var(--text3)">${t}</text>`;
+  });
+  if(refLine&&!deferRefLine)out+=refLineSVG(marginL,w,h,yMin,yMax,refLine);
+  return out;
+}
+function axisDayLabels(marginL,w,h,days){
+  const n=days.length,drawW=w-marginL,toX=i=>marginL+(n<2?drawW/2:i/(n-1)*drawW);
+  return days.map((d,i)=>`<text x="${toX(i).toFixed(1)}" y="${h+14}" text-anchor="middle" font-size="10" fill="var(--text2)">${d}</text>`).join('');
+}
+
+// PA chart (Historia) — eje de valores + línea de referencia en el umbral de Etapa 1 (140)
+function lineSVG(sysA,diaA,lbs,w=320,h=100){
+  const n=sysA.length;if(!n)return'';
+  const marginL=26,yMin=50,yMax=200,drawW=w-marginL;
+  const toY=v=>h-((Math.max(yMin,Math.min(yMax,v))-yMin)/(yMax-yMin))*h;
+  const toX=i=>marginL+(n<2?drawW/2:i/(n-1)*drawW);
+  const sp=sysA.map((v,i)=>`${toX(i).toFixed(1)},${toY(v).toFixed(1)}`).join(' ');
+  const dp=diaA.map((v,i)=>`${toX(i).toFixed(1)},${toY(v).toFixed(1)}`).join(' ');
+  return`<svg width="100%" viewBox="0 0 ${w} ${h+18}" style="overflow:visible;display:block">
+    ${axisLayer(marginL,w,h,yMin,yMax,[80,120,160,200],null,{value:140,color:'var(--amber)',label:tx('Etapa 1 · 140','Stage 1 · 140')})}
+    <polyline points="${sp}" fill="none" stroke="#C62828" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+    <polyline points="${dp}" fill="none" stroke="#1565C0" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${toX(n-1).toFixed(1)}" cy="${toY(sysA[n-1]).toFixed(1)}" r="3.2" fill="#C62828"/>
+    <circle cx="${toX(n-1).toFixed(1)}" cy="${toY(diaA[n-1]).toFixed(1)}" r="3.2" fill="#1565C0"/>
+    ${axisDayLabels(marginL,w,h,lbs)}
+  </svg>`;
+}
+
+// FC chart (Historia) — banda verde 60–100 bpm: rango normal en reposo según la American
+// Heart Association (heart.org), el mismo criterio que ya usa classifyHR().
+function hrHistSVG(hrA,lbs,w=320,h=100){
+  const n=hrA.length;if(!n)return'';
+  const marginL=26,yMin=40,yMax=160,drawW=w-marginL;
+  const toY=v=>h-((Math.max(yMin,Math.min(yMax,v))-yMin)/(yMax-yMin))*h;
+  const toX=i=>marginL+(n<2?drawW/2:i/(n-1)*drawW);
+  const pts=hrA.map((v,i)=>`${toX(i).toFixed(1)},${toY(v).toFixed(1)}`).join(' ');
+  return`<svg width="100%" viewBox="0 0 ${w} ${h+18}" style="overflow:visible;display:block">
+    ${axisLayer(marginL,w,h,yMin,yMax,[40,80,120,160],{from:60,to:100,color:'#2E7D32'},null)}
+    <polyline points="${pts}" fill="none" stroke="var(--indigo)" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${toX(n-1).toFixed(1)}" cy="${toY(hrA[n-1]).toFixed(1)}" r="3.2" fill="var(--indigo)"/>
+    ${axisDayLabels(marginL,w,h,lbs)}
+  </svg>`;
+}
+
+// Glucose chart (Historia) — eje de valores + banda verde hasta la meta personal (color-coded segments)
+// Fix (28 ago): la etiqueta "Meta X" se pinta DESPUÉS de la línea/puntos de la
+// lectura (segs+dots), no antes — así queda siempre en la capa de arriba y no se
+// tapa cuando una lectura reciente sube cerca del nivel de la meta (ambas quedan
+// ancladas en el mismo borde derecho, el punto de "hoy").
+function glucSVG(vals,goal,lbs,w=320,h=100){
+  const n=vals.length;if(!n)return'';
+  const marginL=26,yMin=40,yMax=310,drawW=w-marginL;
+  const toY=v=>h-((Math.max(yMin,Math.min(yMax,v))-yMin)/(yMax-yMin))*h;
+  const toX=i=>marginL+(n<2?drawW/2:i/(n-1)*drawW);
+  const pts=vals.map((v,i)=>({x:toX(i),y:toY(v),clr:v>300?'#B71C1C':v>180?'#C62828':v>goal||v>130?'#E65100':v<70?'#C62828':'#2E7D32'}));
+  const segs=pts.slice(0,-1).map((p,i)=>`<line x1="${p.x.toFixed(1)}" y1="${p.y.toFixed(1)}" x2="${pts[i+1].x.toFixed(1)}" y2="${pts[i+1].y.toFixed(1)}" stroke="${pts[i+1].clr}" stroke-width="2.2" stroke-linecap="round"/>`).join('');
+  const dots=pts.map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3" fill="${p.clr}"/>`).join('');
+  const goalRef={value:goal,color:'#2E7D32',label:tx('Meta · ','Goal · ')+fmtGl(goal)};
+  return`<svg width="100%" viewBox="0 0 ${w} ${h+18}" style="overflow:visible;display:block">
+    ${axisLayer(marginL,w,h,yMin,yMax,[70,130,180,300],{from:yMin,to:goal,color:'#2E7D32'},goalRef,true)}
+    ${segs}${dots}
+    ${refLineSVG(marginL,w,h,yMin,yMax,goalRef)}
+    ${axisDayLabels(marginL,w,h,lbs)}
+  </svg>`;
+}
+
+// Glucose classification gauge — the colored band's "very high" boundary shifts
+// with context (180 fasting / 250 post-meal per ADA) while the axis itself stays
+// fixed so the gauge's size/shape never changes between contexts.
+function glucGauge(gl,ctx){
+  const GLMIN=60,GLMAX=310,range=GLMAX-GLMIN;
+  const pct=v=>(Math.max(0,Math.min(100,(v-GLMIN)/range*100)).toFixed(1));
+  const goal=glGoalFor(ctx);
+  const vhBound=glVhBoundFor(ctx);
+  const glPct=pct(gl),gPct=pct(goal),hBoundPct=pct(vhBound);
+  const cls=classifyGl(gl,ctx);
+  return`<div style="margin-top:6px">
+    <div style="text-align:center;margin-bottom:6px">
+      <div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">${tx('Tu lectura está','Your reading is')} · ${glCtxLabel(ctx)}</div>
+      <div style="font-size:17px;font-weight:800;color:${cls.bg};margin-top:2px">${cls.lbl}</div>
+    </div>
+    <div style="position:relative;height:72px">
+      <div style="position:absolute;left:${gPct}%;top:0;transform:translateX(-50%);background:var(--navy);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:8px;white-space:nowrap;z-index:3">${tx('Meta','Goal')} ${fmtGl(goal)}</div>
+      <div style="position:absolute;left:${gPct}%;top:18px;height:26px;width:1.5px;background:rgba(27,42,74,.35);transform:translateX(-50%);z-index:2"></div>
+      <div style="position:absolute;left:0;right:0;top:28px;height:12px;border-radius:6px;background:linear-gradient(to right,#2E7D32 0%,#43A047 ${gPct}%,#FF8F00 ${gPct}%,#E65100 ${hBoundPct}%,#C62828 ${hBoundPct}%,#B71C1C 100%);z-index:1"></div>
+      <div style="position:absolute;left:${glPct}%;top:42px;transform:translateX(-50%);width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:9px solid ${cls.bg};z-index:3"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text2);margin-top:4px">
+      <span>${tx('Normal','Normal')}</span>
+      <span>${tx('Alto','High')}</span>
+      <span>${tx('Muy alto','Very high')}</span>
+    </div>
+    <div style="display:flex;gap:14px;justify-content:center;margin-top:6px;font-size:10px;color:var(--text2)">
+      <span>— ${tx('Tu meta','Your goal')}</span>
+      <span>▲ ${tx('Tu lectura','Your reading')}</span>
+    </div>
+  </div>`;
+}
+
+// Demo datasets — 6 historical days; the 7th (today) is overwritten with the
+// patient's live value below, so at least "today" on the chart is always real.
+const DEMO_BP_NORMAL=[{sys:122,dia:78},{sys:125,dia:80},{sys:118,dia:76},{sys:130,dia:84},{sys:120,dia:78},{sys:128,dia:82},{sys:118,dia:76}];
+const DEMO_BP_CRISIS=[{sys:155,dia:98},{sys:162,dia:102},{sys:158,dia:100},{sys:175,dia:110},{sys:168,dia:106},{sys:178,dia:115},{sys:185,dia:122}];
+// Each glucose reading carries its own measurement context (ayunas/post) — real
+// patients don't log strictly alternating fasting/post-meal readings, so this is
+// a realistic, non-alternating mix (mostly ayunas, a couple of post entries).
+const DEMO_GL_NORMAL=[{v:112,ctx:'ayunas'},{v:128,ctx:'ayunas'},{v:98,ctx:'ayunas'},{v:170,ctx:'post'},{v:105,ctx:'ayunas'},{v:118,ctx:'ayunas'},{v:108,ctx:'ayunas'}];
+const DEMO_GL_CRISIS=[{v:190,ctx:'ayunas'},{v:245,ctx:'ayunas'},{v:210,ctx:'ayunas'},{v:295,ctx:'post'},{v:230,ctx:'ayunas'},{v:260,ctx:'ayunas'},{v:285,ctx:'ayunas'}];
+const DEMO_HR_NORMAL=[70,74,69,78,72,76,72];
+const DEMO_HR_CRISIS=[95,102,98,110,105,115,118];
+
+function getVitals(){
+  if(s.crisis){
+    return{sys:185,dia:122,hr:118,gl:285,glCtx:'ayunas',
+      bpData:[...DEMO_BP_CRISIS.slice(0,-1),{sys:185,dia:122}],
+      glData:[...DEMO_GL_CRISIS.slice(0,-1),{v:285,ctx:'ayunas'}],
+      hrData:[...DEMO_HR_CRISIS.slice(0,-1),118]};
+  }
+  if(s.noData)  return{sys:0,dia:0,hr:0,gl:0,glCtx:'ayunas',bpData:[],glData:[],hrData:[]};
+  return{sys:s.sys,dia:s.dia,hr:s.hr,gl:s.glucose,glCtx:s.glucoseContext,
+    bpData:[...DEMO_BP_NORMAL.slice(0,-1),{sys:s.sys,dia:s.dia}],
+    glData:[...DEMO_GL_NORMAL.slice(0,-1),{v:s.glucose,ctx:s.glucoseContext}],
+    hrData:[...DEMO_HR_NORMAL.slice(0,-1),s.hr]};
+}
+
+// ─── Screens ─────────────────────────────────────────────────────────────────
+
+function rHeader(){
+  const scrnTitle={dashboard:tx('Inicio','Home'),history:tx('Historia','History'),medications:tx('Medicamentos','Medications'),reports:tx('Reportes','Reports'),profile:tx('Perfil','Profile'),log:tx('Registrar','Log')};
+  const inProfileSub=s.screen==='profile'&&s.profileView&&s.profileView!=='menu';
+  const inReportView=s.screen==='reportView';
+  const segHtml=`<div class="seg">
+      <button class="seg-btn ${s.lang==='ES'?'on':''}" onclick="setState({lang:'ES'})">ES</button>
+      <button class="seg-btn ${s.lang==='EN'?'on':''}" onclick="setState({lang:'EN'})">EN</button>
+    </div>`;
+  if(inReportView){
+    const rep=reportCatalog()[s.viewReportIdx]||{l:tx('Reporte','Report')};
+    return`<div class="hdr">
+      <div class="hdr-back">
+        <button class="back-btn" onclick="setState({screen:'reports'})">‹</button>
+        <span class="hdr-title">${rep.l}</span>
+      </div>
+      ${segHtml}
+    </div>`;
+  }
+  if(inProfileSub){
+    const subTitle={salud:tx('Mi salud y metas','My health & goals'),notif:tx('Notificaciones','Notifications'),familia:tx('Familia y cuidado','Family & care'),cuenta:tx('Cuenta','Account')}[s.profileView]||'';
+    return`<div class="hdr">
+      <div class="hdr-back">
+        <button class="back-btn" onclick="setState({profileView:'menu'})">‹</button>
+        <span class="hdr-title">${subTitle}</span>
+      </div>
+      ${segHtml}
+    </div>`;
+  }
+  return`<div class="hdr">
+    <span class="hdr-logo">💙 VitalPulse</span>
+    <span class="hdr-title">${scrnTitle[s.screen]||''}</span>
+    ${segHtml}
+  </div>`;
+}
+
+function rTabs(){
+  const left=[
+    {id:'dashboard',lbl:tx('Inicio','Home'),svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`},
+    {id:'history',lbl:tx('Historia','History'),svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`},
+  ];
+  const right=[
+    {id:'medications',lbl:tx('Meds','Meds'),svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>`},
+    {id:'reports',lbl:tx('Reportes','Reports'),svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`},
+    {id:'profile',lbl:tx('Perfil','Profile'),svg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`},
+  ];
+  const activeTab=s.screen==='reportView'?'reports':s.screen;
+  const mk=t=>`<button class="tab ${activeTab===t.id?'on':''}" onclick="setState({screen:'${t.id}'${t.id==='profile'?",profileView:'menu'":''}})">${t.svg}<span>${t.lbl}</span></button>`;
+  // Registrar lives INSIDE the tab bar as a raised, always-visible center button —
+  // not a floating overlay — so it can never cover card content, and its position
+  // is fixed and learnable: it's always the middle icon, every screen, every time.
+  const fabTab=`<button class="tab tab-fab ${s.screen==='log'?'on':''}" onclick="openLog()">
+    <span class="fab-circle">+</span><span>${tx('Registrar','Log')}</span>
+  </button>`;
+  return`<div class="tab-bar">${left.map(mk).join('')}${fabTab}${right.map(mk).join('')}</div>`;
+}
+
+function rDashboard(){
+  const v=getVitals();
+  const bp=classifyBP(v.sys,v.dia);
+  const gl=classifyGl(v.gl,v.glCtx);
+  const hr=classifyHR(v.hr);
+  const vis=vitalsVisibility();
+  const meds=computeMeds();
+  const takenC=meds.reduce((a,m)=>a+m.slots.filter(sl=>sl.check).length,0);
+  const totalC=meds.reduce((a,m)=>a+m.slots.length,0);
+  const medOk=takenC===totalC;
+  // Las alertas de cifras fuera de rango dependen de la severidad clínica del valor,
+  // nunca del diagnóstico: un registro ocasional fuera de la rutina esperada también alerta.
+  const bpAlert=bp.k==='crisis'||bp.k==='s2'||bp.k==='s1';
+  const glAlert=gl.k!=='ok';
+  const hrAlert=hr.k!=='normal';
+  const medAlert=meds.some(m=>m.anyMissed);
+  const days=s.lang==='ES'?['L','M','X','J','V','S','D']:['M','T','W','T','F','S','S'];
+  const noD=s.noData;
+
+  // Trend tabs: only the metrics that apply to this patient's diagnoses — FC always included
+  const trendTabs=[
+    ...(vis.showBP?[{id:'pa',l:'PA'}]:[]),
+    ...(vis.showGl?[{id:'gl',l:tx('Glucosa','Glucose')}]:[]),
+    {id:'fc',l:'FC'},
+  ];
+  const activeTrend=trendTabs.some(t=>t.id===s.trendMetric)?s.trendMetric:trendTabs[0].id;
+
+  return`
+    <!-- Greeting -->
+    <div class="card" style="padding:14px 16px;display:flex;align-items:center;gap:12px">
+      <div class="av" style="width:46px;height:46px;font-size:16px;letter-spacing:-.5px">RG</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:14px;font-weight:700;color:var(--text)">${greeting()}, ${s.name.split(' ')[0]}</div>
+        <div style="font-size:11px;color:var(--text2)">68 ${tx('años','yrs')} · ${diagLabel()}</div>
+      </div>
+      <button onclick="setState({showPaywall:true})" style="font-size:10px;font-weight:700;background:rgba(91,79,224,.1);color:var(--indigo);border:none;border-radius:8px;padding:4px 9px;flex-shrink:0;cursor:pointer;font-family:Inter,sans-serif">${s.premium?`❤️ ${tx('Premium','Premium')}`:`${tx('Prueba','Trial')} ${s.trialDaysLeft}d`} ›</button>
+    </div>
+
+    <!-- Alerts -->
+    ${bpAlert&&!noD?`<div class="alert ad"><span style="font-size:18px;flex-shrink:0">⚠️</span><div><div style="font-weight:700;color:var(--red);font-size:13px">${tx('Presión fuera de rango','Blood pressure out of range')}</div><div style="font-size:12px;color:var(--text2);margin-top:2px">${v.sys}/${v.dia} mmHg — ${bp.lbl}</div></div></div>`:''}
+    ${hrAlert&&!noD?`<div class="alert ad"><span style="font-size:18px;flex-shrink:0">⚠️</span><div><div style="font-weight:700;color:var(--red);font-size:13px">${tx('Frecuencia cardíaca fuera de rango','Heart rate out of range')}</div><div style="font-size:12px;color:var(--text2);margin-top:2px">${v.hr} bpm — ${hr.lbl}</div></div></div>`:''}
+    ${glAlert&&!noD?`<div class="alert ad"><span style="font-size:18px;flex-shrink:0">⚠️</span><div><div style="font-weight:700;color:var(--red);font-size:13px">${tx('Glucosa fuera de rango','Glucose out of range')}</div><div style="font-size:12px;color:var(--text2);margin-top:2px">${fmtGl(v.gl)} ${glU()} — ${gl.lbl}</div></div></div>`:''}
+    ${medAlert&&!noD?`<div class="alert aw"><span style="font-size:18px;flex-shrink:0">💊</span><div><div style="font-weight:700;color:#E65100;font-size:13px">${tx('Medicamento pendiente','Pending medication')}</div><div style="font-size:12px;color:var(--text2);margin-top:2px">${tx('Dosis sin registrar hoy','Unrecorded dose today')}</div></div></div>`:''}
+
+    <!-- Vitales primarios: Presión y/o Glucosa — solo los que apliquen según diagnóstico -->
+    <div style="text-align:center;margin-top:-2px">
+      ${!noD?`<div style="font-size:11.5px;color:var(--text2);margin-bottom:2px">${tx('Última toma: hoy ','Last reading: today ')}${fmtTime12(s.readingMinutes)}</div>`:''}
+      <div style="font-size:11.5px;font-weight:600;color:var(--text2)">${tx('Toca una tarjeta para actualizar','Tap a card to update')}</div>
+    </div>
+    <div class="vgrid" style="${vis.showBP&&vis.showGl?'':'grid-template-columns:1fr'}">
+      ${vis.showBP?`<div class="vcard" style="padding:16px;border-left:3px solid ${noD?'var(--bdr)':bp.bg};position:relative" onclick="openLog()">
+        <span class="tap-hint" style="position:absolute;top:12px;right:12px">›</span>
+        <div class="vcl">🫀 ${tx('Presión','Blood P.')}</div>
+        ${noD?`<div style="font-size:13px;color:var(--text2);padding:8px 0">${tx('Sin datos','No data')}</div>`:`<div class="vcv" style="font-size:29px">${v.sys}<span style="font-size:14px;font-weight:500">/${v.dia}</span></div><div class="vcu">mmHg</div>${bdg(bp)}`}
+      </div>`:''}
+      ${vis.showGl?`<div class="vcard" style="padding:16px;border-left:3px solid ${noD?'var(--bdr)':gl.bg};position:relative" onclick="openLog()">
+        <span class="tap-hint" style="position:absolute;top:12px;right:12px">›</span>
+        <div class="vcl">🩸 ${tx('Glucosa','Glucose')}${noD?'':` · ${glCtxLabel(v.glCtx)}`}</div>
+        ${noD?`<div style="font-size:13px;color:var(--text2);padding:8px 0">${tx('Sin datos','No data')}</div>`:`<div class="vcv" style="font-size:29px">${fmtGl(v.gl)}</div><div class="vcu">${glU()}</div>${bdg(gl)}`}
+      </div>`:''}
+    </div>
+
+    <!-- FC: siempre visible, sin importar el diagnóstico -->
+    <div class="card" style="display:flex;align-items:center;justify-content:space-between;padding:11px 16px;cursor:pointer" onclick="openLog()">
+      <div style="display:flex;align-items:center;gap:9px">
+        <span style="font-size:16px">❤️</span>
+        <span style="font-size:12.5px;font-weight:600;color:var(--text2)">${tx('Frecuencia Cardíaca','Heart Rate')}</span>
+      </div>
+      ${noD?`<span style="font-size:12px;color:var(--text2)">${tx('Sin datos','No data')}</span>`:`<div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums">${v.hr}<span style="font-size:10px;font-weight:500;color:var(--text2)"> bpm</span></span>${bdg(hr)}<span class="tap-hint">›</span></div>`}
+    </div>
+
+    <!-- Tarea, no vital: adherencia a medicamentos -->
+    <div class="card" style="border:1.5px dashed var(--bdr);background:var(--surf2);box-shadow:none;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer" onclick="setState({screen:'medications'})">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:17px">💊</span>
+        <div>
+          <div style="font-size:12.5px;font-weight:600;color:var(--text)">${tx('Medicamentos','Medications')}</div>
+          <div style="font-size:11px;color:var(--text2)">${takenC}/${totalC} ${tx('tomados hoy','taken today')}</div>
+        </div>
+      </div>
+      <span class="bdg" style="background:${medOk?'#2E7D32':'#E65100'};color:#fff">${medOk?tx('Completo ✓','Complete ✓'):tx('Pendiente','Pending')}</span>
+    </div>
+
+    <!-- Tendencia 7 días — pestañas según lo que aplique; FC siempre presente -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <div style="font-size:13px;font-weight:700;color:var(--text)">${tx('Tendencia — 7 días','Trend — 7 days')}</div>
+        <div class="seg">${trendTabs.map(t=>`<button class="seg-btn ${activeTrend===t.id?'on':''}" onclick="setState({trendMetric:'${t.id}'})">${t.l}</button>`).join('')}</div>
+      </div>
+      ${activeTrend==='pa'?`<div style="display:flex;gap:10px;font-size:10px;color:var(--text2);margin-bottom:8px">
+          <span style="display:flex;align-items:center;gap:3px"><svg width="12" height="3"><line x1="0" y1="1.5" x2="12" y2="1.5" stroke="#C62828" stroke-width="2.5"/></svg>SIS</span>
+          <span style="display:flex;align-items:center;gap:3px"><svg width="12" height="3"><line x1="0" y1="1.5" x2="12" y2="1.5" stroke="#1565C0" stroke-width="2.5"/></svg>DIA</span>
+          <span style="display:flex;align-items:center;gap:3px"><svg width="12" height="3"><line x1="0" y1="1.5" x2="12" y2="1.5" stroke="#2E7D32" stroke-width="1.2" stroke-dasharray="3,2"/></svg>${tx('Meta','Goal')}</span>
+        </div><div>${sparkSVG(v.bpData,272,54)}</div>`
+      :activeTrend==='gl'?`<div>${sparkSingleSVG(v.glData.map(d=>d.v),272,54,'var(--teal)',40,300,glGoalFor(v.glCtx))}</div>`
+      :`<div>${sparkSingleSVG(v.hrData,272,54,'var(--indigo)',40,160,null)}</div>`}
+      <div style="display:flex;justify-content:space-between;margin-top:8px">${days.map(d=>`<span style="font-size:10px;color:var(--text2)">${d}</span>`).join('')}</div>
+      <div style="text-align:center;font-size:10px;color:var(--text3);margin-top:8px">${tx('Promedio diario · el punto de hoy es tu última lectura registrada','Daily average · today’s point is your latest logged reading')}</div>
+    </div>
+
+    <div style="text-align:center;font-size:11px;color:var(--text3);padding-bottom:4px">⚕️ ${tx('Esta app no reemplaza la consulta médica.','This app does not replace medical consultation.')}</div>
+    <div style="text-align:center;font-size:9.5px;color:var(--text3);padding-bottom:4px">© 2026 HJaime Studios. ${tx('Todos los derechos reservados.','All rights reserved.')}</div>`;
+}
+
+function rLog(){
+  const vis=vitalsVisibility();
+  const bp=classifyBP(s.sys,s.dia);
+  const gl=classifyGl(s.glucose,s.glucoseContext);
+  const hr=classifyHR(s.hr);
+  const abnorm=(vis.showBP&&bp.k!=='normal'&&bp.k!=='elev')||hr.k!=='normal'||(vis.showGl&&gl.k!=='ok');
+  const glDisplay=fmtGl(s.glucose);
+  const goalDisplay=fmtGl(glGoalFor(s.glucoseContext));
+  const timeLabel=vis.showBP&&vis.showGl?tx('PA, FC y Glucosa<br>tomadas a las:','BP, HR & Glucose<br>taken at:')
+    :vis.showBP?tx('PA y FC<br>tomadas a las:','BP & HR<br>taken at:')
+    :vis.showGl?tx('FC y Glucosa<br>tomadas a las:','HR & Glucose<br>taken at:')
+    :tx('FC<br>tomada a las:','HR<br>taken at:');
+  return`
+    <!-- HORA: escribe directamente con teclado (input nativo) o ajusta con los
+         botones −/+ para cambios finos de un minuto. Reemplaza los antiguos
+         botones AM/PM, que no movían la hora mostrada. -->
+    <div class="card">
+      <div class="slbl" style="margin-bottom:8px">${tx('Hora de la medición','Measurement time')}</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.55;margin-bottom:10px">${timeLabel}</div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <input type="time" class="inp-t" style="flex:1;min-width:130px;padding:10px 8px;font-size:18px" value="${fmtTime(s.readingMinutes)}" oninput="if(this.value)s.readingMinutes=parseT(this.value)" onchange="onTimeInp(this.value)">
+        <div style="display:flex;align-items:center;gap:3px;flex-shrink:0">
+          <button class="step-b" style="width:36px;height:38px" onclick="setState(st=>({readingMinutes:((st.readingMinutes-1+1440)%1440)}))">−</button>
+          <div style="font-size:16px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums;min-width:76px;text-align:center">${fmtTime12(s.readingMinutes)}</div>
+          <button class="step-b" style="width:36px;height:38px" onclick="setState(st=>({readingMinutes:(st.readingMinutes+1)%1440}))">+</button>
+        </div>
+      </div>
+    </div>
+    <!-- PA (condicional a HTA) -->
+    ${vis.showBP?`<div class="card">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">🫀 ${tx('Presión Arterial','Blood Pressure')}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        ${[{lbl:tx('Sistólica','Systolic'),key:'sys',val:s.sys,min:50,max:260,u:'mmHg'},
+           {lbl:tx('Diastólica','Diastolic'),key:'dia',val:s.dia,min:30,max:180,u:'mmHg'}]
+          .map(f=>`<div>
+            <div style="font-size:10px;font-weight:600;color:var(--text2);text-align:center;margin-bottom:5px">${f.lbl}</div>
+            <div class="step">
+              <button class="step-b" style="width:30px;height:44px;font-size:20px" onclick="setState(st=>({${f.key}:clamp(st.${f.key}-1,${f.min},${f.max})}))">−</button>
+              <div><div class="step-v" style="font-size:18px">${f.val}</div><div class="step-u">${f.u}</div></div>
+              <button class="step-b" style="width:30px;height:44px;font-size:20px" onclick="setState(st=>({${f.key}:clamp(st.${f.key}+1,${f.min},${f.max})}))">+</button>
+            </div>
+          </div>`).join('')}
+      </div>
+      <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">${bdg(bp)}<span style="font-size:10px;color:var(--text2);align-self:center">PA</span></div>
+    </div>`:''}
+    <!-- FC: siempre visible, sin importar el diagnóstico -->
+    <div class="card">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">❤️ ${tx('Frecuencia Cardíaca','Heart Rate')}</div>
+      <div style="max-width:140px;margin:0 auto">
+        <div class="step">
+          <button class="step-b" style="width:30px;height:44px;font-size:20px" onclick="setState(st=>({hr:clamp(st.hr-1,20,220)}))">−</button>
+          <div><div class="step-v" style="font-size:18px">${s.hr}</div><div class="step-u">bpm</div></div>
+          <button class="step-b" style="width:30px;height:44px;font-size:20px" onclick="setState(st=>({hr:clamp(st.hr+1,20,220)}))">+</button>
+        </div>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;justify-content:center">${bdg(hr)}<span style="font-size:10px;color:var(--text2);align-self:center">FC</span></div>
+    </div>
+    <!-- GLUCOSA (condicional a Diabetes) -->
+    ${vis.showGl?`<div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div style="font-size:13px;font-weight:700;color:var(--text)">🩸 ${tx('Glucosa en sangre','Blood glucose')}</div>
+        <div class="seg">
+          <button class="seg-btn ${!isMmol()?'on':''}" onclick="setState({glucoseUnit:'mgdl'})">mg/dL</button>
+          <button class="seg-btn ${isMmol()?'on':''}" onclick="setState({glucoseUnit:'mmol'})">mmol/L</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-bottom:10px">
+        <div class="step">
+          <button class="step-b" onclick="setState(st=>({glucose:clamp(isMmol()?Math.round(st.glucose-GFACTOR):st.glucose-1,20,500)}))">−</button>
+          <div><div class="step-v">${glDisplay}</div><div class="step-u">${glU()}</div></div>
+          <button class="step-b" onclick="setState(st=>({glucose:clamp(isMmol()?Math.round(st.glucose+GFACTOR):st.glucose+1,20,500)}))">+</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <button onclick="setState({glucoseContext:'ayunas'})" style="padding:9px 10px;border-radius:10px;border:1.5px solid ${s.glucoseContext==='ayunas'?'var(--teal)':'var(--bdr)'};background:${s.glucoseContext==='ayunas'?'rgba(0,191,165,.1)':'var(--surf2)'};cursor:pointer;font-size:11.5px;font-weight:700;color:${s.glucoseContext==='ayunas'?'var(--teal)':'var(--text2)'};font-family:Inter,sans-serif;white-space:nowrap">${tx('En ayunas','Fasting')}</button>
+          <button onclick="setState({glucoseContext:'post'})" style="padding:9px 10px;border-radius:10px;border:1.5px solid ${s.glucoseContext==='post'?'var(--teal)':'var(--bdr)'};background:${s.glucoseContext==='post'?'rgba(0,191,165,.1)':'var(--surf2)'};cursor:pointer;font-size:11.5px;font-weight:700;color:${s.glucoseContext==='post'?'var(--teal)':'var(--text2)'};font-family:Inter,sans-serif;white-space:nowrap">${tx('Posprandial','Post-meal')}</button>
+        </div>
+      </div>
+      ${glucGauge(s.glucose,s.glucoseContext)}
+      <!-- Meta: solo lectura aquí, se edita en Perfil > Salud -->
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--bdr);display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <div style="font-size:11px;font-weight:600;color:${s.glucose<=glGoalFor(s.glucoseContext)?'var(--green)':'var(--amber)'}">${s.glucose<=glGoalFor(s.glucoseContext)?tx('✓ Dentro de tu meta','✓ Within your goal'):tx('▲ Por encima de meta','▲ Above goal')} · ${tx('meta','goal')} ${goalDisplay} ${glU()}</div>
+        <button onclick="setState({screen:'profile',profileView:'salud'})" style="background:none;border:none;color:var(--indigo);font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;flex-shrink:0">${tx('Editar meta ›','Edit goal ›')}</button>
+      </div>
+    </div>`:''}
+    <!-- SÍNTOMAS (condicional) -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <span style="font-size:13px;font-weight:600;color:var(--text)">${tx('¿Sentiste algo raro hoy?','Did you feel anything unusual today?')}</span>
+        <div class="seg">
+          <button class="seg-btn ${!s.symToggle?'on':''}" onclick="setState({symToggle:false})">${tx('No','No')}</button>
+          <button class="seg-btn ${s.symToggle?'on':''}" onclick="setState({symToggle:true})">${tx('Sí','Yes')}</button>
+        </div>
+      </div>
+      ${s.symToggle?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
+        ${[{k:'headache',ic:'🤕',l:tx('Dolor de cabeza','Headache')},{k:'dizzy',ic:'😵',l:tx('Mareo','Dizziness')},{k:'blur',ic:'👁️',l:tx('Visión borrosa','Blurred vision')},{k:'palp',ic:'💓',l:tx('Palpitaciones','Palpitations')},{k:'fatigue',ic:'😪',l:tx('Fatiga','Fatigue')},{k:'fever',ic:'🌡️',l:tx('Fiebre','Fever')}]
+          .map(sym=>`<button onclick="toggleSym('${sym.k}')" style="display:flex;align-items:center;gap:7px;padding:9px 10px;border-radius:10px;border:1.5px solid ${s.symptoms[sym.k]?'var(--indigo)':'var(--bdr)'};background:${s.symptoms[sym.k]?'rgba(91,79,224,.08)':'var(--surf2)'};cursor:pointer;font-family:Inter,sans-serif">
+            <span style="font-size:15px">${sym.ic}</span><span style="font-size:12px;font-weight:600;color:${s.symptoms[sym.k]?'var(--indigo)':'var(--text2)'}">${sym.l}</span>
+          </button>`).join('')}
+      </div>`:''}
+    </div>
+    <!-- NOTAS -->
+    <div class="card">
+      <div class="slbl" style="margin-bottom:8px">${tx('Notas (opcional)','Notes (optional)')}</div>
+      <textarea class="inp" rows="2" placeholder="${tx('Después de ejercicio, estresado...','After exercise, stressed...')}" oninput="s.notes=this.value">${s.notes}</textarea>
+    </div>
+    ${abnorm&&!s.noData?`<div class="alert aw"><span>📲</span><div style="font-size:12px;color:#E65100">${tx('Al guardar se notificará a tus familiares conectados por valores fuera de rango.','Your connected family will be notified when saving out-of-range values.')}</div></div>`:''}
+    <div style="text-align:center;font-size:11px;color:var(--text3)">⚕️ ${tx('Esta app no reemplaza la consulta médica.','This app does not replace medical consultation.')}</div>
+    <div style="text-align:center;font-size:9.5px;color:var(--text3)">© 2026 HJaime Studios. ${tx('Todos los derechos reservados.','All rights reserved.')}</div>
+    <button class="btn-p teal" onclick="saveLog()">📋 ${tx('Guardar Lectura','Save Reading')}</button>
+    <button class="btn-s" onclick="cancelLog()">${tx('Cancelar','Cancel')}</button>`;
+}
+
+function rHistory(){
+  const vis=vitalsVisibility();
+  const noD=s.noData;
+  const days=s.lang==='ES'?['L','M','X','J','V','S','D']:['M','T','W','T','F','S','S'];
+  const ranges=[{id:'Semana',l:tx('7d','7d')},{id:'Mes',l:tx('30d','30d')},{id:'3M',l:'3M'},{id:'6M',l:'6M'}];
+  const premLocked=(s.range==='3M'||s.range==='6M')&&!s.premium&&!s.trialActive;
+  const sysA=s.crisis?[155,162,158,175,168,178,185]:[128,135,130,142,127,133,132];
+  const diaA=s.crisis?[98,102,100,110,106,115,122]:[82,86,84,90,81,85,84];
+  const hrA=s.crisis?DEMO_HR_CRISIS:DEMO_HR_NORMAL;
+  const sysAvg=Math.round(sysA.reduce((a,v)=>a+v,0)/sysA.length);
+  const diaAvg=Math.round(diaA.reduce((a,v)=>a+v,0)/diaA.length);
+  const hrAvg=Math.round(hrA.reduce((a,v)=>a+v,0)/hrA.length);
+
+  // Glucose: same shared demo dataset used elsewhere, now with a real per-reading
+  // context (ayunas/posprandial) — today's slot reflects the live value+context.
+  // A context toggle above the chart filters to only the matching readings/days,
+  // so the average and the chart never mix fasting and post-meal numbers.
+  const glFull=(s.crisis?DEMO_GL_CRISIS:DEMO_GL_NORMAL).map((d,i)=>
+    i===6?{v:s.crisis?285:s.glucose,ctx:s.crisis?'ayunas':s.glucoseContext}:d);
+  const glCtxSel=s.historyGlCtx||'ayunas';
+  const glPairs=glFull.map((d,i)=>({...d,day:days[i]})).filter(p=>p.ctx===glCtxSel);
+  const glA=glPairs.map(p=>p.v);
+  const glDays=glPairs.map(p=>p.day);
+  const glAvg=glA.length?Math.round(glA.reduce((a,v)=>a+v,0)/glA.length):null;
+
+  const abnormals=noD?[]:[{d:tx('Hoy 07:32','Today 07:32'),sys:s.crisis?185:142,dia:s.crisis?122:90,gl:s.crisis?285:165,glCtx:'ayunas'},{d:tx('Ayer 20:15','Yest. 20:15'),sys:s.crisis?178:130,dia:s.crisis?115:84,gl:s.crisis?260:172,glCtx:'post'}].filter(r=>(vis.showBP&&classifyBP(r.sys,r.dia).k!=='normal')||(vis.showGl&&classifyGl(r.gl,r.glCtx).k!=='ok'));
+
+  return`
+    <!-- Range selector -->
+    <div style="display:flex;gap:7px">
+      ${ranges.map(r=>`<button onclick="setRange('${r.id}')" style="flex:1;padding:9px 3px;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;border:1.5px solid ${s.range===r.id?'var(--indigo)':'var(--bdr)'};background:${s.range===r.id?'var(--indigo)':'var(--surf)'};color:${s.range===r.id?'#fff':'var(--text2)'};">${r.l}</button>`).join('')}
+    </div>
+    ${premLocked?`<div class="card" style="text-align:center;padding:24px"><div style="font-size:28px;margin-bottom:10px">🔒</div><div style="font-weight:700;font-size:15px;color:var(--text);margin-bottom:6px">${tx('Historial extendido — Premium','Extended history — Premium')}</div><button class="btn-p" style="max-width:200px;margin:10px auto 0" onclick="setState({showPaywall:true})">${tx('Ver Premium','View Premium')}</button></div>`
+    :noD?`<div class="card" style="text-align:center;padding:28px"><div style="font-size:36px;margin-bottom:12px">📊</div><div style="font-weight:700;font-size:15px;color:var(--text);margin-bottom:6px">${tx('Sin historial todavía','No history yet')}</div><div style="font-size:13px;color:var(--text2)">${tx('Tus lecturas aparecerán aquí.','Your readings will appear here.')}</div></div>`
+    :`
+    <!-- BP chart (condicional a HTA) -->
+    ${vis.showBP?`<div class="card">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">${tx('Presión Arterial','Blood Pressure')}</div>
+      <div style="display:flex;gap:10px;margin-bottom:8px;font-size:10px;color:var(--text2);flex-wrap:wrap">
+        <span style="display:flex;align-items:center;gap:3px"><svg width="12" height="3"><line x1="0" y1="1.5" x2="12" y2="1.5" stroke="#C62828" stroke-width="2.5"/></svg>${tx('Sis.','Sys.')}</span>
+        <span style="display:flex;align-items:center;gap:3px"><svg width="12" height="3"><line x1="0" y1="1.5" x2="12" y2="1.5" stroke="#1565C0" stroke-width="2.5"/></svg>${tx('Dia.','Dia.')}</span>
+        <span style="display:flex;align-items:center;gap:3px"><svg width="12" height="3"><line x1="0" y1="1.5" x2="12" y2="1.5" stroke="var(--amber)" stroke-width="1.5" stroke-dasharray="3,2"/></svg>${tx('Umbral Etapa 1','Stage 1 threshold')}</span>
+      </div>
+      <div style="overflow:visible">${lineSVG(sysA,diaA,days)}</div>
+      <div style="display:flex;gap:16px;margin-top:6px;font-size:11px;color:var(--text2)">
+        <span>${tx('Prom. Sis.','Avg Sys.')} <b style="color:var(--text)">${sysAvg}</b></span>
+        <span>${tx('Prom. Dia.','Avg Dia.')} <b style="color:var(--text)">${diaAvg}</b></span>
+      </div>
+    </div>`:''}
+    <!-- FC chart: siempre visible -->
+    <div class="card">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">${tx('Frecuencia Cardíaca','Heart Rate')}</div>
+      <div style="display:inline-flex;align-items:center;gap:5px;font-size:10.5px;color:var(--text2);background:var(--surf2);border-radius:8px;padding:3px 8px;margin-bottom:8px">🟩 ${tx('Rango normal en reposo · 60–100 bpm (AHA)','Normal resting range · 60–100 bpm (AHA)')}</div>
+      <div style="overflow:visible">${hrHistSVG(hrA,days)}</div>
+      <div style="margin-top:6px;font-size:11px;color:var(--text2)">${tx('Prom.','Avg')} <b style="color:var(--text)">${hrAvg}</b> bpm</div>
+    </div>
+    <!-- Glucose chart (condicional a Diabetes) — toggle ayunas/posprandial: cada
+         lectura solo tiene un contexto, así que el filtro nunca mezcla ambos. -->
+    ${vis.showGl?`<div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px">
+        <div style="font-size:13px;font-weight:700;color:var(--text)">${tx('Glucosa','Glucose')}</div>
+        <div class="seg">
+          <button class="seg-btn ${glCtxSel==='ayunas'?'on':''}" onclick="setState({historyGlCtx:'ayunas'})">${tx('Ayunas','Fasting')}</button>
+          <button class="seg-btn ${glCtxSel==='post'?'on':''}" onclick="setState({historyGlCtx:'post'})">${tx('Posprandial','Post-meal')}</button>
+        </div>
+      </div>
+      ${glA.length?`<div style="overflow:visible">${glucSVG(glA,glGoalFor(glCtxSel),glDays)}</div>
+      <div style="display:flex;align-items:center;gap:16px;margin-top:6px;font-size:11px;color:var(--text2);flex-wrap:wrap">
+        <span>${tx('Meta','Goal')} ${fmtGl(glGoalFor(glCtxSel))} ${glU()}</span>
+        <span>${tx('Prom.','Avg')} <b style="color:var(--text)">${fmtGl(glAvg)}</b> ${glU()}</span>
+      </div>`:`<div style="padding:16px 0;text-align:center;font-size:12px;color:var(--text2)">${tx('Sin lecturas en este período para este contexto.','No readings in this period for this context.')}</div>`}
+    </div>`:''}
+    <!-- Abnormal readings -->
+    ${abnormals.length?`<div class="card">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px">${tx('Lecturas anormales recientes','Recent abnormal readings')}</div>
+      ${abnormals.map(r=>{const bR=classifyBP(r.sys,r.dia);const gR=classifyGl(r.gl,r.glCtx);return`<div style="padding:10px 0;border-bottom:1px solid var(--bdr)"><div style="font-size:11px;color:var(--text2);margin-bottom:4px">${r.d}</div><div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">${vis.showBP?`<span style="font-size:12px;font-weight:600;color:var(--text)">PA: ${r.sys}/${r.dia}</span>${bR.k!=='normal'?bdg(bR):''}`:''}${vis.showGl?`<span style="font-size:12px;font-weight:600;color:var(--text)">Gluc (${glCtxLabel(r.glCtx)}): ${fmtGl(r.gl)}</span>${gR.k!=='ok'?bdg(gR):''}`:''}</div></div>`;}).join('')}
+    </div>`:''}
+    `}`;
+}
+
+function rMedications(){
+  const meds=computeMeds();
+  const takenC=meds.reduce((a,m)=>a+m.slots.filter(sl=>sl.check).length,0);
+  const totalC=meds.reduce((a,m)=>a+m.slots.length,0);
+  const pct=totalC?Math.round(takenC/totalC*100):100;
+  return`
+    <!-- Summary -->
+    <div class="card" style="display:flex;align-items:center;justify-content:space-between">
+      <div><div style="font-size:20px;font-weight:800;color:var(--text)">${takenC}/${totalC}</div><div style="font-size:12px;color:var(--text2)">${tx('dosis tomadas hoy','doses taken today')}</div></div>
+      <div style="text-align:right"><div class="ab" style="width:80px;margin-bottom:4px"><div class="af ${pct<100?'warn':''}" style="width:${pct}%"></div></div><div style="font-size:12px;font-weight:700;color:${pct===100?'var(--green)':'var(--amber)'};">${pct===100?tx('Completo ✓','Complete ✓'):tx('Pendiente','Pending')}</div></div>
+    </div>
+    <!-- Meds -->
+    ${!meds.length?`<div class="card" style="text-align:center;padding:28px"><div style="font-size:36px;margin-bottom:10px">💊</div><div style="font-weight:700;font-size:15px;color:var(--text);margin-bottom:6px">${tx('Sin medicamentos','No medications')}</div><div style="font-size:13px;color:var(--text2)">${tx('Agrega tus medicamentos para recibir recordatorios.','Add medications to receive reminders.')}</div></div>`
+    :meds.map(m=>`<div class="card" style="position:relative">
+      <div style="display:flex;align-items:center;gap:11px;margin-bottom:12px">
+        <div style="width:40px;height:40px;border-radius:12px;background:rgba(0,121,107,.1);display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0">💊</div>
+        <div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;color:var(--text)">${m.name}</div><div style="font-size:12px;color:var(--text2)">${m.dose} · ${m.timesPerDay}x/${tx('día','day')}</div></div>
+        <button onclick="toggleMenu('${m.id}')" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--bdr);background:var(--surf2);cursor:pointer;font-size:16px;color:var(--text2);display:flex;align-items:center;justify-content:center;flex-shrink:0">⋯</button>
+        ${s.openMedMenuId===m.id?`<div class="med-menu"><button class="mmi" onclick="startEditMed('${m.id}')">✏️ ${tx('Editar','Edit')}</button><button class="mmi del" onclick="startDeleteMed('${m.id}')">🗑️ ${tx('Eliminar','Delete')}</button></div>`:''}
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        ${m.slots.map((sl,i)=>`<button onclick="toggleMed('${m.id}',${i})" style="display:flex;align-items:center;gap:7px;padding:8px 12px;border-radius:10px;border:1.5px solid ${sl.check?'var(--teal)':'var(--bdr)'};background:${sl.check?'rgba(0,191,165,.08)':'var(--surf2)'};cursor:pointer;font-family:Inter,sans-serif">
+          <span style="width:18px;height:18px;border-radius:50%;border:2px solid ${sl.check?'var(--teal)':'var(--text2)'};background:${sl.check?'var(--teal)':'transparent'};display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;flex-shrink:0">${sl.check?'✓':''}</span>
+          <span style="font-size:12px;font-weight:600;color:${sl.check?'var(--teal)':'var(--text2)'}">${sl.label}</span>
+        </button>`).join('')}
+      </div>
+      <div style="margin-top:11px;padding-top:10px;border-top:1px solid var(--bdr)">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:4px"><span>${tx('Adherencia 7 días','7-day adherence')}</span><span><b>${m.anyMissed?'75':'100'}%</b></span></div>
+        <div class="ab"><div class="af ${m.anyMissed?'warn':''}" style="width:${m.anyMissed?75:100}%"></div></div>
+      </div>
+    </div>`).join('')}
+    <button class="btn-p teal" onclick="openAddMed()">+ ${tx('Agregar Medicamento','Add Medication')}</button>`;
+}
+
+function rReports(){
+  const vis=vitalsVisibility();
+  const effectivePremium=s.premium||s.trialActive;
+  const periods=[{id:'weekly',l:tx('Semanal','Weekly')},{id:'monthly',l:tx('Mensual','Monthly')},{id:'sixmonth',l:tx('6 meses','6 months')}];
+  const isSix=s.reportPeriod==='sixmonth';
+  const premLocked=s.reportPeriod!=='weekly'&&!effectivePremium;
+  const careNms=s.caregivers.map(c=>c.name.split(' ')[0]).join(', ');
+  const ds={weekly:{sys:128,dia:82,hr:74,glAyunas:108,glPost:158},monthly:{sys:133,dia:85,hr:76,glAyunas:128,glPost:172},sixmonth:{sys:136,dia:87,hr:77,glAyunas:142,glPost:185}}[s.reportPeriod||'weekly'];
+  const plbl={weekly:tx('Resumen semanal · 18–24 Ago 2026','Weekly summary · Aug 18–24, 2026'),monthly:tx('Resumen mensual · Agosto 2026','Monthly summary · August 2026'),sixmonth:tx('Resumen de 6 meses · Mar–Ago 2026','Summary 6 months · Mar–Aug 2026')}[s.reportPeriod||'weekly'];
+  const saved=reportCatalog();
+  return`
+    <div style="display:flex;gap:7px">
+      ${periods.map(p=>`<button onclick="setState({reportPeriod:'${p.id}',reportGenerated:false,shareChannel:null})" style="flex:1;padding:9px 3px;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;border:1.5px solid ${s.reportPeriod===p.id?'var(--indigo)':'var(--bdr)'};background:${s.reportPeriod===p.id?'var(--indigo)':'var(--surf)'};color:${s.reportPeriod===p.id?'#fff':'var(--text2)'};">${p.l}</button>`).join('')}
+    </div>
+    ${premLocked?`<div class="card" style="text-align:center;padding:24px"><div style="font-size:28px;margin-bottom:10px">🔒</div><div style="font-weight:700;font-size:15px;color:var(--text);margin-bottom:6px">${tx('Reportes extendidos — Premium','Extended reports — Premium')}</div><div style="font-size:13px;color:var(--text2);margin-bottom:14px">${tx('Desbloquea reportes mensuales y de 6 meses','Unlock monthly and 6-month reports')}</div><button class="btn-p" style="max-width:200px;margin:0 auto" onclick="setState({showPaywall:true})">${tx('Ver Premium','View Premium')}</button></div>`:`
+    <div style="font-size:12px;color:var(--text2);text-align:center">${plbl}</div>
+    <div class="card" style="padding:4px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--bdr);border-radius:10px;overflow:hidden">
+        ${(()=>{const items=[
+          ...(vis.showBP?[{ic:'🫀',l:tx('Sistólica prom.','Avg Systolic'),v:ds.sys,u:'mmHg'},{ic:'🫀',l:tx('Diastólica prom.','Avg Diastolic'),v:ds.dia,u:'mmHg'}]:[]),
+          {ic:'❤️',l:tx('FC promedio','Avg Heart Rate'),v:ds.hr,u:'bpm'},
+          ...(vis.showGl?[{ic:'🩸',l:tx('Glucosa ayunas prom.','Avg Fasting Glucose'),v:fmtGl(ds.glAyunas),u:glU()},{ic:'🩸',l:tx('Glucosa posprandial prom.','Avg Post-meal Glucose'),v:fmtGl(ds.glPost),u:glU()},{ic:'🧪',l:tx('HbA1c estimada','Estimated HbA1c'),v:estHbA1c(ds.glAyunas,ds.glPost),u:'%'}]:[]),
+        ];return items.map((d,i)=>`<div style="background:var(--surf);text-align:center;padding:16px 8px;${items.length%2===1&&i===items.length-1?'grid-column:1/-1':''}">
+            <div style="font-size:15px;margin-bottom:5px">${d.ic}</div>
+            <div style="font-size:24px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums;line-height:1">${d.v}<span style="font-size:12px;font-weight:600;color:var(--text2)"> ${d.u}</span></div>
+            <div style="font-size:11.5px;font-weight:600;color:var(--text2);margin-top:5px">${d.l}</div>
+          </div>`).join('');})()}
+      </div>
+      ${vis.showGl?`<div style="font-size:10.5px;color:var(--text3);text-align:center;padding:8px 10px 2px">${tx('HbA1c estimada a partir de tu glucosa promedio (ecuación ADAG) — no reemplaza el examen de laboratorio.','Estimated HbA1c from your average glucose (ADAG equation) — not a substitute for the lab test.')}</div>`:''}
+    </div>
+    <div class="card">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px">${tx('Contenido del reporte PDF','PDF report contents')}</div>
+      ${[...(vis.showBP?[tx('Resumen de Presión Arterial','Blood Pressure Summary')]:[]),tx('Resumen de Frecuencia Cardíaca','Heart Rate Summary'),...(vis.showGl?[tx('Resumen de Glucosa','Glucose Summary')]:[]),tx('Adherencia a Medicamentos','Medication Adherence'),tx('Gráficas de Tendencias','Trend Charts'),tx('Tabla Detallada de Lecturas','Detailed Readings Table')].map(item=>`<div style="display:flex;align-items:center;gap:9px;padding:6px 0"><span style="color:var(--teal);font-size:14px">✓</span><span style="font-size:13px;color:var(--text)">${item}</span></div>`).join('')}
+    </div>
+    ${isSix?`<div class="alert aw" style="font-size:12px"><span>📲</span><span>${tx(`Este resumen se enviará automáticamente a tus familiares (${careNms}).`,`This summary will automatically be sent to your family (${careNms}).`)}</span></div>`:''}
+    ${!isSix?`<div class="card"><div class="slbl" style="margin-bottom:10px">${tx('Compartir por','Share via')}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+      <button onclick="setState({shareChannel:'whatsapp',reportGenerated:false})" style="padding:11px;border-radius:12px;border:1.5px solid ${s.shareChannel==='whatsapp'?'var(--teal)':'var(--bdr)'};background:${s.shareChannel==='whatsapp'?'rgba(0,191,165,.1)':'var(--surf2)'};cursor:pointer;font-size:13px;font-family:Inter,sans-serif;color:var(--text);font-weight:600">📱 WhatsApp</button>
+      <button onclick="setState({shareChannel:'email',reportGenerated:false})" style="padding:11px;border-radius:12px;border:1.5px solid ${s.shareChannel==='email'?'var(--teal)':'var(--bdr)'};background:${s.shareChannel==='email'?'rgba(0,191,165,.1)':'var(--surf2)'};cursor:pointer;font-size:13px;font-family:Inter,sans-serif;color:var(--text);font-weight:600">✉️ Email</button>
+    </div></div>`:''}
+    ${s.reportGenerated?`<div class="card" style="background:rgba(0,191,165,.07);border:1.5px solid var(--teal);text-align:center;padding:20px"><div style="font-size:24px;margin-bottom:8px">✅</div><div style="font-size:14px;font-weight:700;color:var(--teal)">${isSix?tx('Resumen enviado a familiares','Summary sent to family'):tx('Reporte guardado','Report saved')}</div><div style="font-size:12px;color:var(--text2);margin-top:4px">${isSix?tx(`Enviado a ${careNms}.`,`Sent to ${careNms}.`):s.shareChannel?tx(`Guardado y compartido por ${s.shareChannel==='email'?'Email':'WhatsApp'}.`,`Saved and shared via ${s.shareChannel==='email'?'Email':'WhatsApp'}.`):tx('Guardado como respaldo en la app.','Saved as backup in the app.')}</div></div>`
+    :`<button class="btn-p teal" onclick="genReport()">${isSix?tx('Generar y Enviar a familiares','Generate and Send to family'):tx('Generar y Guardar','Generate and Save')}</button>`}
+    <div class="card">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px">${tx('Respaldo en la app','Backups in the app')}</div>
+      ${saved.map((r,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bdr);cursor:pointer" onclick="setState({screen:'reportView',viewReportIdx:${i}})"><div style="width:36px;height:36px;border-radius:10px;background:rgba(0,191,165,.1);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📄</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--text)">${r.l}</div><div style="font-size:11px;color:var(--text2)">${r.d}</div></div><span style="font-size:12px;color:var(--teal);font-weight:600">${tx('Ver ›','View ›')}</span></div>`).join('')}
+    </div>
+    `}`;
+}
+
+function rProfile(){
+  const view=s.profileView||'menu';
+  if(view==='salud')return rProfileSalud();
+  if(view==='notif')return rProfileNotif();
+  if(view==='familia')return rProfileFamilia();
+  if(view==='cuenta')return rProfileCuenta();
+  return rProfileMenu();
+}
+
+function rProfileMenu(){
+  const items=[
+    {id:'salud',ic:'🩺',tt:tx('Mi salud y metas','My health & goals'),sb:`${tx('Metas','Goals')} ${fmtGl(s.glucoseGoal)}/${fmtGl(s.glucoseGoalPost)} ${glU()} · Dr. Martínez`},
+    {id:'notif',ic:'🔔',tt:tx('Notificaciones','Notifications'),sb:`${fmtTime12(s.amMinutes)} · ${fmtTime12(s.pmMinutes)}`},
+    {id:'familia',ic:'👨‍👩‍👧',tt:tx('Familia y cuidado','Family & care'),sb:tx(`${s.caregivers.length} familiares conectados`,`${s.caregivers.length} family members connected`)},
+    {id:'__reports',ic:'📊',tt:tx('Reportes','Reports'),sb:tx('Semanal, mensual y de 6 meses','Weekly, monthly & 6-month')},
+    {id:'cuenta',ic:'⚙️',tt:tx('Cuenta','Account'),sb:`${s.lang==='ES'?'Español':'English'} · ${s.premium?tx('Premium','Premium'):s.trialActive?tx(`Prueba ${s.trialDaysLeft}d`,`Trial ${s.trialDaysLeft}d`):'VitalPulse'}`},
+  ];
+  return`
+    <div class="card" style="display:flex;align-items:center;gap:13px">
+      <div class="av" style="width:52px;height:52px;font-size:19px">RG</div>
+      <div><div style="font-size:16px;font-weight:700;color:var(--text)">${s.name}</div><div style="font-size:13px;color:var(--text2)">68 ${tx('años','yrs')} · ${diagLabel()}</div></div>
+    </div>
+    <div class="card" style="padding:4px 12px">
+      ${items.map(m=>`<div class="menu-row" onclick="${m.id==='__reports'?"setState({screen:'reports'})":`setState({profileView:'${m.id}'})`}">
+        <div class="menu-ic">${m.ic}</div>
+        <div class="menu-tx"><div class="menu-tt">${m.tt}</div><div class="menu-sb">${m.sb}</div></div>
+        <span class="menu-chev">›</span>
+      </div>`).join('')}
+    </div>`;
+}
+
+function rProfileSalud(){
+  const vis=vitalsVisibility();
+  return`
+    ${vis.showGl?`<div class="card note">
+      <div class="note-tag">🆕 ${tx('ahora con meta separada para posprandial','now with a separate post-meal goal')}</div>
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px">${tx('Metas personales de glucosa','Personal glucose goals')}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--bdr)">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--text)">${tx('En ayunas','Fasting')}</div>
+          <div style="font-size:11px;color:var(--text2)">${tx('Antes de comer','Before eating')}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:5px">
+          <button class="step-b" style="width:30px;height:30px;font-size:17px" onclick="setState(st=>({glucoseGoal:clamp(isMmol()?Math.round(st.glucoseGoal-GFACTOR):st.glucoseGoal-1,70,200)}))">−</button>
+          <span style="font-size:18px;font-weight:800;color:var(--text);min-width:40px;text-align:center;font-variant-numeric:tabular-nums">${fmtGl(s.glucoseGoal)}</span>
+          <button class="step-b" style="width:30px;height:30px;font-size:17px" onclick="setState(st=>({glucoseGoal:clamp(isMmol()?Math.round(st.glucoseGoal+GFACTOR):st.glucoseGoal+1,70,200)}))">+</button>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--text)">${tx('Posprandial (1-2h)','Post-meal (1-2h)')}</div>
+          <div style="font-size:11px;color:var(--text2)">${tx('Después de comer','After eating')}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:5px">
+          <button class="step-b" style="width:30px;height:30px;font-size:17px" onclick="setState(st=>({glucoseGoalPost:clamp(isMmol()?Math.round(st.glucoseGoalPost-GFACTOR):st.glucoseGoalPost-1,90,260)}))">−</button>
+          <span style="font-size:18px;font-weight:800;color:var(--text);min-width:40px;text-align:center;font-variant-numeric:tabular-nums">${fmtGl(s.glucoseGoalPost)}</span>
+          <button class="step-b" style="width:30px;height:30px;font-size:17px" onclick="setState(st=>({glucoseGoalPost:clamp(isMmol()?Math.round(st.glucoseGoalPost+GFACTOR):st.glucoseGoalPost+1,90,260)}))">+</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="row">
+        <span style="font-size:14px;color:var(--text)">${tx('Unidad de glucosa','Glucose unit')}</span>
+        <div class="seg"><button class="seg-btn ${!isMmol()?'on':''}" onclick="setState({glucoseUnit:'mgdl'})">mg/dL</button><button class="seg-btn ${isMmol()?'on':''}" onclick="setState({glucoseUnit:'mmol'})">mmol/L</button></div>
+      </div>
+    </div>`:''}
+    <div class="card">
+      <div class="slbl" style="margin-bottom:12px">${tx('Médico y contacto','Doctor & contact')}</div>
+      <div class="row"><span style="font-size:14px;color:var(--text)">👨‍⚕️ ${tx('Médico','Doctor')}</span><span style="font-size:14px;font-weight:600;color:var(--indigo)">Dr. Martínez</span></div>
+      <div class="row"><span style="font-size:14px;color:var(--text)">📞 ${tx('Emergencia','Emergency')}</span><span style="font-size:14px;font-weight:600;color:var(--indigo)">Ana García</span></div>
+    </div>`;
+}
+
+function rProfileNotif(){
+  return`
+    <div class="card">
+      <div class="slbl" style="margin-bottom:12px">${tx('Recordatorios diarios','Daily reminders')}</div>
+      <div class="row"><span style="font-size:14px;color:var(--text)">🌅 ${tx('Recordatorio de mañana','Morning reminder')}</span><span style="font-size:14px;font-weight:600;color:var(--indigo)">${fmtTime12(s.amMinutes)}</span></div>
+      <div class="row"><span style="font-size:14px;color:var(--text)">🌙 ${tx('Recordatorio de noche','Evening reminder')}</span><span style="font-size:14px;font-weight:600;color:var(--indigo)">${fmtTime12(s.pmMinutes)}</span></div>
+    </div>
+    <div class="card">
+      <div style="font-size:13px;color:var(--text);margin-bottom:8px">${tx('Enviar recordatorios a','Send reminders to')}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+        ${[{id:'patient',l:tx('Solo yo','Only me')},{id:'caregiver',l:tx('Familiares','Family')},{id:'both',l:tx('Ambos','Both')}].map(r=>`<button onclick="setState({reminderRecipient:'${r.id}'})" style="padding:8px 4px;border-radius:10px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid ${s.reminderRecipient===r.id?'var(--teal)':'var(--bdr)'};background:${s.reminderRecipient===r.id?'var(--teal)':'var(--surf2)'};color:${s.reminderRecipient===r.id?'#fff':'var(--text2)'};font-family:Inter,sans-serif">${r.l}</button>`).join('')}
+      </div>
+    </div>`;
+}
+
+function rProfileFamilia(){
+  return`
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div class="slbl">${tx('Familiares conectados','Connected family')}</div>
+        <span style="font-size:11px;font-weight:700;background:rgba(91,79,224,.1);color:var(--indigo);border-radius:8px;padding:3px 8px">${s.inviteCode}</span>
+      </div>
+      ${s.caregivers.map((cg,i)=>`<div class="row">
+        <div style="display:flex;align-items:center;gap:10px"><div class="av" style="width:36px;height:36px;font-size:13px">${cg.initials}</div><div><div style="font-size:14px;font-weight:600;color:var(--text)">${cg.name}</div><div style="font-size:11px;color:var(--text2)">${tx('Recibe todos los avisos','Receives all alerts')}</div></div></div>
+        <button onclick="removeCaregiver(${i})" style="width:28px;height:28px;border-radius:50%;border:1px solid var(--bdr);background:var(--surf2);cursor:pointer;font-size:13px;color:var(--text2)">✕</button>
+      </div>`).join('')}
+      <div style="padding-top:12px;border-top:1px solid var(--bdr)">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:8px">${tx('Código para invitar familiares:','Invite code for family members:')}</div>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1;background:var(--surf2);border-radius:10px;padding:10px 14px;font-size:18px;font-weight:800;color:var(--text);letter-spacing:2px;text-align:center">${s.inviteCode}</div>
+          <button onclick="copyCode()" style="padding:10px 14px;border-radius:10px;border:none;background:${s.codeCopied?'var(--teal)':'var(--surf2)'};color:${s.codeCopied?'#fff':'var(--indigo)'};font-weight:700;cursor:pointer;font-family:Inter,sans-serif;font-size:12px">${s.codeCopied?tx('✓','✓'):tx('Copiar','Copy')}</button>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:6px">${tx('Válido 7 días · uso ilimitado','Valid 7 days · unlimited use')}</div>
+      </div>
+    </div>`;
+}
+
+function rProfileCuenta(){
+  return`
+    <div class="card">
+      <div class="row">
+        <span style="font-size:14px;color:var(--text)">${tx('Idioma','Language')}</span>
+        <div class="seg"><button class="seg-btn ${s.lang==='ES'?'on':''}" onclick="setState({lang:'ES'})">ES</button><button class="seg-btn ${s.lang==='EN'?'on':''}" onclick="setState({lang:'EN'})">EN</button></div>
+      </div>
+      <div class="row">
+        <span style="font-size:14px;color:var(--text)">${tx('Tamaño de letra','Font size')}</span>
+        <span style="font-size:14px;font-weight:600;color:var(--indigo)">${tx('Grande','Large')}</span>
+      </div>
+    </div>
+    <div class="card" style="display:flex;align-items:center;justify-content:space-between">
+      <div><div style="font-size:14px;font-weight:700;color:var(--text)">${s.premium?tx('Premium activo','Premium active'):s.trialActive?tx('Prueba gratis activa','Free trial active'):'VitalPulse'}</div><div style="font-size:12px;color:var(--text2)">${s.premium?'❤️ '+tx('Gracias','Thank you'):s.trialActive?`${s.trialDaysLeft} ${tx('días restantes','days left')}`:tx('Desbloquea todo','Unlock everything')}</div></div>
+      ${!s.premium?`<button class="btn-p" style="width:auto;padding:9px 14px;font-size:13px" onclick="setState({showPaywall:true})">${tx('Ver planes','See plans')}</button>`:''}
+    </div>
+    <button class="btn-s" onclick="setState({screen:'login'})">${tx('Cerrar sesión','Log out')}</button>`;
+}
+
+function rOnboarding(){
+  const dots=`<div style="display:flex;gap:8px;justify-content:center;margin-bottom:4px">${[1,2,3].map(i=>`<div style="height:8px;border-radius:4px;background:${s.obStep===i?'var(--teal)':'var(--bdr)'};width:${s.obStep===i?22:8}px;transition:width .2s"></div>`).join('')}</div>`;
+  if(s.obStep===1)return`<div class="ob">
+    <div style="font-size:52px">💙</div>${dots}
+    <div style="font-size:21px;font-weight:800;color:var(--text);text-align:center">${tx('Bienvenido a VitalPulse Sync','Welcome to VitalPulse Sync')}</div>
+    <div style="font-size:14px;color:var(--text2);text-align:center;max-width:280px">${tx('Monitoreo inteligente para adultos con hipertensión y diabetes.','Smart monitoring for adults with hypertension and diabetes.')}</div>
+    <div style="background:var(--surf2);border-radius:16px;padding:18px;width:100%;display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:13px;font-weight:700;color:var(--text2)">${tx('¿Cuál es tu nombre?','What is your name?')}</div>
+      <input class="inp" placeholder="Roberto García" value="${s.name}" oninput="s.name=this.value">
+    </div>
+    <button class="btn-p teal" onclick="setState({obStep:2})">${tx('Continuar','Continue')}</button>
+  </div>`;
+  if(s.obStep===2)return`<div class="ob">
+    <div style="font-size:52px">🩺</div>${dots}
+    <div style="font-size:20px;font-weight:800;color:var(--text);text-align:center">${tx('¿Cuáles son tus diagnósticos?','What are your diagnoses?')}</div>
+    <div style="background:var(--surf2);border-radius:16px;padding:18px;width:100%;display:flex;flex-direction:column;gap:12px">
+      ${[{id:'hta',i:'🫀',l:tx('Hipertensión (HTA)','Hypertension (HTA)')},{id:'dm',i:'🩸',l:tx('Diabetes Mellitus','Diabetes Mellitus')},{id:'other',i:'➕',l:tx('Otra condición','Other condition')}].map(c=>`<label style="display:flex;align-items:center;gap:12px;cursor:pointer"><input type="checkbox" ${s.conditions[c.id]?'checked':''} onchange="setState(st=>({conditions:{...st.conditions,${c.id}:this.checked}}))" style="width:20px;height:20px;accent-color:var(--teal)"><span style="font-size:15px">${c.i}</span><span style="font-size:14px;font-weight:600;color:var(--text)">${c.l}</span></label>${c.id==='other'&&s.conditions.other?`<input class="inp" style="margin-left:32px;width:calc(100% - 32px)" placeholder="${tx('¿Cuál condición?','Which condition?')}" value="${s.otherDiagnosis}" oninput="s.otherDiagnosis=this.value">`:''}`).join('')}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%">
+      <button class="btn-s" onclick="setState({obStep:1})">${tx('Atrás','Back')}</button>
+      <button class="btn-p teal" onclick="setState({obStep:3})">${tx('Continuar','Continue')}</button>
+    </div>
+  </div>`;
+  return`<div class="ob">
+    <div style="font-size:52px">⏰</div>${dots}
+    <div style="font-size:20px;font-weight:800;color:var(--text);text-align:center">${tx('Configura tus recordatorios','Set your reminders')}</div>
+    <div style="background:var(--surf2);border-radius:16px;padding:18px;width:100%;display:flex;flex-direction:column;gap:14px">
+      <div><div class="slbl" style="margin-bottom:8px">${tx('Recordatorio AM','AM Reminder')}</div><input type="time" class="inp-t" value="${fmtTime(s.amMinutes)}" oninput="s.amMinutes=parseT(this.value)"></div>
+      <div><div class="slbl" style="margin-bottom:8px">${tx('Recordatorio PM','PM Reminder')}</div><input type="time" class="inp-t" value="${fmtTime(s.pmMinutes)}" oninput="s.pmMinutes=parseT(this.value)"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%">
+      <button class="btn-s" onclick="setState({obStep:2})">${tx('Atrás','Back')}</button>
+      <button class="btn-p teal" onclick="setState({screen:'dashboard'})">${tx('Empezar','Get started')}</button>
+    </div>
+  </div>`;
+}
+
+function rLogin(){
+  return`<div class="ob">
+    <div style="font-size:60px">💙</div>
+    <div style="font-size:22px;font-weight:800;color:var(--teal)">VitalPulse Sync</div>
+    <div style="font-size:14px;color:var(--text2);text-align:center">${tx('Monitoreo de salud para adultos mayores','Health monitoring for older adults')}</div>
+    <div style="background:var(--surf2);border-radius:16px;padding:18px;width:100%;display:flex;flex-direction:column;gap:12px">
+      <input class="inp" type="email" placeholder="${tx('Correo electrónico','Email address')}">
+      <input class="inp" type="password" placeholder="${tx('Contraseña','Password')}">
+    </div>
+    <button class="btn-p teal" onclick="setState({screen:'dashboard'})">${tx('Iniciar sesión','Log in')}</button>
+    <button class="btn-gh" onclick="setState({screen:'onboarding',obStep:1})">${tx('Crear cuenta nueva','Create new account')}</button>
+    <button class="btn-gh" style="font-size:13px;color:var(--text2)" onclick="setState({screen:'caregiverCode'})">${tx('Soy familiar / cuidador','I am a family member / caregiver')}</button>
+  </div>`;
+}
+
+function rCaregiverCode(){
+  return`<div class="ob">
+    <div style="font-size:52px">🔑</div>
+    <div style="font-size:20px;font-weight:800;color:var(--text);text-align:center">${tx('Ingresa el código del paciente','Enter the patient code')}</div>
+    <div style="font-size:13px;color:var(--text2);text-align:center">${tx('El paciente comparte su código VP-XXXX desde su perfil.','The patient shares their VP-XXXX code from their profile.')}</div>
+    <input class="inp" style="font-size:24px;font-weight:800;text-align:center;letter-spacing:3px" placeholder="VP-0000" maxlength="7" value="${s.caregiverCodeInput}" oninput="this.value=this.value.toUpperCase();s.caregiverCodeInput=this.value;if(s.codeErrorShown){s.codeErrorShown=false;render();}">
+    ${s.codeErrorShown?`<div style="color:var(--red);font-size:13px;text-align:center">${tx('Código inválido. Verifica con el paciente.','Invalid code. Check with the patient.')}</div>`:''}
+    <button class="btn-p teal" onclick="checkCode()">${tx('Conectarme','Connect')}</button>
+    <button class="btn-gh" style="color:var(--text2)" onclick="setState({screen:'login'})">${tx('Volver','Back')}</button>
+  </div>`;
+}
+
+function rCaregiverFeed(){
+  const v=getVitals();
+  const bpA=classifyBP(v.sys,v.dia);
+  const glA=classifyGl(v.gl,v.glCtx);
+  // v.sys/v.gl are 0 in the "Sin datos" demo mode — showing them (or the fixed
+  // demo history below) as if they were real readings would misleadingly imply
+  // there's already a history for a patient who hasn't logged anything yet, so
+  // the WHOLE feed (live-derived and fixed demo entries alike) is empty in that mode.
+  const alerts=s.noData?[]:[
+    {time:tx('Hoy 07:32','Today 07:32'),msg:`PA ${v.sys}/${v.dia} mmHg — ${bpA.lbl}`,sev:alertSevBP(bpA.k),icon:'🫀'},
+    {time:tx('Ayer 20:15','Yesterday 20:15'),msg:`${tx('Glucosa','Glucose')} (${glCtxLabel(v.glCtx)}) ${fmtGl(v.gl)} ${glU()} — ${glA.lbl}`,sev:alertSevGl(glA.k),icon:'🩸'},
+    {time:tx('Ayer 08:00','Yesterday 08:00'),msg:tx('No registró Losartán AM','Did not log Losartán AM'),sev:'w',icon:'💊'},
+    {time:tx('Lun 12:10','Mon 12:10'),msg:tx('PA 118/76 mmHg — Normal','BP 118/76 mmHg — Normal'),sev:'ok',icon:'✅'},
+  ];
+  return`<div style="background:var(--surf);padding:14px 18px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:12px;flex-shrink:0">
+    <div class="av" style="width:42px;height:42px;font-size:15px">RG</div>
+    <div><div style="font-size:15px;font-weight:700;color:var(--text)">${s.name}</div><div style="font-size:12px;color:var(--text2)">${tx('Familiar conectado','Connected as caregiver')}</div></div>
+  </div>
+  <div class="scr"><div class="pad">
+    <div style="font-size:14px;font-weight:700;color:var(--text)">${tx('Avisos de salud','Health alerts')}</div>
+    ${alerts.length?alerts.map(a=>`<div class="alert ${a.sev==='d'?'ad':a.sev==='ok'?'':'aw'}" style="${a.sev==='ok'?'background:rgba(0,191,165,.07);border:1px solid var(--teal);':''}">
+      <span style="font-size:22px;flex-shrink:0">${a.icon}</span>
+      <div><div style="font-size:13px;font-weight:700;color:${a.sev==='d'?'var(--red)':a.sev==='ok'?'var(--teal)':'#E65100'}">${a.msg}</div><div style="font-size:11px;color:var(--text2);margin-top:2px">${a.time}</div></div>
+    </div>`).join(''):`<div style="text-align:center;padding:24px 0;font-size:13px;color:var(--text2)">${tx('Aún no hay avisos — no se han registrado lecturas.','No alerts yet — no readings logged.')}</div>`}
+    <button class="btn-s" onclick="setState({screen:'login'})">${tx('Salir','Exit')}</button>
+  </div></div>`;
+}
+
+function rPaywall(){
+  const onTrial=s.trialActive&&!s.premium;
+  return`<div class="modal-bg" onclick="setState({showPaywall:false})"><div class="sheet" onclick="event.stopPropagation()">
+    <div style="text-align:center;padding:6px 0 4px"><div style="font-size:30px;margin-bottom:6px">🔓</div>
+    <div class="sheetT">${tx('VitalPulse Premium','VitalPulse Premium')}</div>
+    <div style="font-size:13px;color:var(--text2);margin-top:4px">${tx('Desbloquea todo el potencial','Unlock the full potential')}</div></div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      ${[tx('Historial y gráficas ilimitadas','Unlimited history and charts'),tx('Reportes mensuales y de 6 meses','Monthly and 6-month reports'),tx('Medicamentos y perfiles ilimitados','Unlimited medications and profiles'),tx('Exportar datos en CSV','Export data as CSV')].map(f=>`<div style="display:flex;align-items:center;gap:10px;font-size:14px;color:var(--text)"><span style="color:var(--teal);font-size:16px">✓</span>${f}</div>`).join('')}
+    </div>
+    <button class="btn-p teal" onclick="setState({premium:true,showPaywall:false,trialActive:false})">${onTrial?tx('Suscribirme — $2.99/mes','Subscribe — $2.99/mo'):tx('Comenzar prueba gratis de 1 mes','Start 1-month free trial')}</button>
+    <div style="font-size:11px;color:var(--text2);text-align:center">${onTrial?tx(`Tu prueba termina en ${s.trialDaysLeft} días.`,`Your trial ends in ${s.trialDaysLeft} days.`):tx('Primer mes gratis, luego $2.99/mes.','First month free, then $2.99/mo.')}</div>
+    <button class="btn-gh" style="color:var(--text2)" onclick="setState({showPaywall:false})">${tx('Ahora no','Not now')}</button>
+  </div></div>`;
+}
+
+function rAddMed(){
+  const ed=!!s.editingMedId;
+  return`<div class="modal-bg" onclick="closeAddMed()"><div class="sheet" onclick="event.stopPropagation()">
+    <div class="sheetT">${ed?tx('Editar medicamento','Edit medication'):tx('Agregar medicamento','Add medication')}</div>
+    <div><div class="slbl" style="margin-bottom:6px">${tx('Nombre','Name')}</div><input class="inp" placeholder="${tx('Ej. Losartán','E.g. Losartan')}" value="${s.newMedName}" oninput="s.newMedName=this.value"></div>
+    <div><div class="slbl" style="margin-bottom:6px">${tx('Dosis','Dose')}</div><input class="inp" placeholder="${tx('Ej. 50mg','E.g. 50mg')}" value="${s.newMedDose}" oninput="s.newMedDose=this.value"></div>
+    <div><div class="slbl" style="margin-bottom:8px">${tx('Veces al día','Times per day')}</div>
+      <div class="step" style="max-width:160px">
+        <button class="step-b" onclick="setState(st=>({newMedTimesPerDay:Math.max(1,st.newMedTimesPerDay-1)}))">−</button>
+        <div class="step-v">${s.newMedTimesPerDay}</div>
+        <button class="step-b" onclick="setState(st=>({newMedTimesPerDay:Math.min(4,st.newMedTimesPerDay+1)}))">+</button>
+      </div>
+    </div>
+    <button class="btn-p teal" onclick="saveMed()">${ed?tx('Guardar cambios','Save changes'):tx('Guardar','Save')}</button>
+    <button class="btn-s" onclick="closeAddMed()">${tx('Cancelar','Cancel')}</button>
+  </div></div>`;
+}
+
+function rDeleteMed(){
+  const m=s.customMeds.find(c=>c.id===s.deleteMedId)||{};
+  return`<div class="modal-bg"><div class="sheet">
+    <div class="sheetT" style="text-align:center">🗑️ ${tx('¿Eliminar medicamento?','Delete medication?')}</div>
+    <div style="font-size:14px;color:var(--text2);text-align:center">${m.name||''} ${m.dose||''} ${tx('será eliminado. Esta acción no se puede deshacer.','will be deleted. This cannot be undone.')}</div>
+    <button class="btn-p" style="background:var(--red)" onclick="confirmDeleteMed()">${tx('Eliminar','Delete')}</button>
+    <button class="btn-s" onclick="setState({deleteMedId:null})">${tx('Cancelar','Cancel')}</button>
+  </div></div>`;
+}
+
+// ─── Event handlers ──────────────────────────────────────────────────────────
+function onTimeInp(v){if(!v)return;const[h,m]=v.split(':').map(Number);setState({readingMinutes:h*60+m});}
+function parseT(v){if(!v)return 0;const[h,m]=v.split(':').map(Number);return h*60+m;}
+function toggleMed(id,i){setState(st=>{const t={...st.medTaken};const arr=[...(t[id]||Array(st.customMeds.find(m=>m.id===id).timesPerDay).fill(false))];arr[i]=!arr[i];t[id]=arr;return{medTaken:t};});}
+function toggleMenu(id){setState(st=>({openMedMenuId:st.openMedMenuId===id?null:id}));}
+function toggleSym(key){setState(st=>{const sym={...st.symptoms};if(key==='none'){Object.keys(sym).forEach(k=>sym[k]=false);sym.none=!st.symptoms.none;}else{sym[key]=!sym[key];sym.none=false;}return{symptoms:sym};});}
+
+// Registrar (Log) works as a draft: values already change live as you tap the
+// steppers (so the reading always reflects what's on screen), but the draft is
+// only COMMITTED when you press "Guardar Lectura". "Cancelar" restores whatever
+// was there before you opened Registrar, discarding anything typed in between.
+const LOG_FIELDS=['sys','dia','hr','glucose','notes','symptoms','symToggle','readingMinutes','glucoseContext'];
+function openLog(){
+  setState(st=>{
+    const backup={};
+    LOG_FIELDS.forEach(k=>backup[k]=(k==='symptoms')?{...st.symptoms}:st[k]);
+    return{screen:'log',logBackup:backup};
+  });
+}
+function cancelLog(){
+  setState(st=>({...(st.logBackup||{}),screen:'dashboard',logBackup:null}));
+}
+function saveLog(){
+  setState({screen:'dashboard',logBackup:null});
+}
+function startEditMed(id){const m=s.customMeds.find(c=>c.id===id);if(!m)return;setState({showAddMed:true,editingMedId:id,newMedName:m.name,newMedDose:m.dose,newMedTimesPerDay:m.timesPerDay,openMedMenuId:null});}
+function startDeleteMed(id){setState({deleteMedId:id,openMedMenuId:null});}
+function openAddMed(){setState({showAddMed:true,editingMedId:null,newMedName:'',newMedDose:'',newMedTimesPerDay:2});}
+function closeAddMed(){setState({showAddMed:false,editingMedId:null,newMedName:'',newMedDose:'',newMedTimesPerDay:2});}
+function saveMed(){setState(st=>{if(!st.newMedName.trim())return{showAddMed:false};if(st.editingMedId){return{customMeds:st.customMeds.map(cm=>cm.id===st.editingMedId?{...cm,name:st.newMedName.trim(),dose:st.newMedDose.trim()||'—',timesPerDay:st.newMedTimesPerDay}:cm),showAddMed:false,editingMedId:null,newMedName:'',newMedDose:'',newMedTimesPerDay:2};}const id='c'+Date.now();return{customMeds:[...st.customMeds,{id,name:st.newMedName.trim(),dose:st.newMedDose.trim()||'—',timesPerDay:st.newMedTimesPerDay}],medTaken:{...st.medTaken,[id]:Array(st.newMedTimesPerDay).fill(false)},showAddMed:false,newMedName:'',newMedDose:'',newMedTimesPerDay:2};});}
+function confirmDeleteMed(){setState(st=>({customMeds:st.customMeds.filter(m=>m.id!==st.deleteMedId),deleteMedId:null}));}
+function removeCaregiver(i){setState(st=>({caregivers:st.caregivers.filter((_,idx)=>idx!==i)}));}
+function copyCode(){if(navigator.clipboard)navigator.clipboard.writeText(s.inviteCode);setState({codeCopied:true});setTimeout(()=>setState({codeCopied:false}),1800);}
+function checkCode(){if(s.caregiverCodeInput===s.inviteCode){setState({screen:'caregiverFeed'});}else{setState({codeErrorShown:true});}}
+function setRange(r){if((r==='3M'||r==='6M')&&!s.premium&&!s.trialActive){setState({showPaywall:true});return;}setState({range:r});}
+
+// Same average figures the Reportes stat grid already showed — now also the
+// single source of truth for the report-view screen and the shared text message.
+// `med` is that period's overall medication-adherence % — a fixed archived figure,
+// deliberately NOT derived from today's live medTaken checkboxes: a saved report
+// is a snapshot of a past period, so its adherence must stay the same no matter
+// what you check off today, and must not retroactively change every open report.
+const REPORT_STATS={weekly:{sys:128,dia:82,hr:74,glAyunas:108,glPost:158,med:92},monthly:{sys:133,dia:85,hr:76,glAyunas:128,glPost:172,med:88},sixmonth:{sys:136,dia:87,hr:77,glAyunas:142,glPost:185,med:83}};
+function reportCatalog(){
+  return[
+    {period:'weekly',l:tx('Resumen semanal','Weekly summary'),d:tx('18–24 Ago 2026','Aug 18–24, 2026')},
+    {period:'weekly',l:tx('Resumen semanal','Weekly summary'),d:tx('11–17 Ago 2026','Aug 11–17, 2026')},
+    {period:'weekly',l:tx('Resumen semanal','Weekly summary'),d:tx('4–10 Ago 2026','Aug 4–10, 2026')},
+    s.monthlyReport?{...s.monthlyReport,period:'monthly'}:{period:'monthly',l:tx('Resumen mensual','Monthly summary'),d:tx('Julio 2026','July 2026')},
+    s.sixMonthReport?{...s.sixMonthReport,period:'sixmonth'}:{period:'sixmonth',l:tx('Resumen de 6 meses','6-month summary'),d:tx('Mar–Ago 2026','Mar–Aug 2026')},
+  ];
+}
+// Plain-text summary — deliberately simple (no image/PDF) so WhatsApp and Email
+// can send it via a plain link, with no extra library or backend involved.
+function reportMessage(period){
+  const vis=vitalsVisibility();
+  const ds=REPORT_STATS[period];
+  const plbl={weekly:tx('Resumen Semanal','Weekly Summary'),monthly:tx('Resumen Mensual','Monthly Summary'),sixmonth:tx('Resumen de 6 Meses','6-Month Summary')}[period];
+  const drange={weekly:tx('18–24 Ago 2026','Aug 18–24, 2026'),monthly:tx('Agosto 2026','August 2026'),sixmonth:tx('Mar–Ago 2026','Mar–Aug 2026')}[period];
+  const bpk=classifyBP(ds.sys,ds.dia).k,glkA=classifyGl(ds.glAyunas,'ayunas').k,glkP=classifyGl(ds.glPost,'post').k;
+  const outOfRange=(vis.showBP&&bpk!=='normal'&&bpk!=='elev')||(vis.showGl&&(glkA!=='ok'||glkP!=='ok'));
+  const lines=[
+    `📋 ${plbl} — VitalPulse Sync`,
+    `${s.name} · ${drange}`,
+    '',
+    ...(vis.showBP?[`🫀 ${tx('Presión','BP')}: ${ds.sys}/${ds.dia} mmHg ${tx('promedio','avg')}`]:[]),
+    `❤️ FC: ${ds.hr} bpm ${tx('promedio','avg')}`,
+    ...(vis.showGl?[
+      `🩸 ${tx('Glucosa en ayunas','Fasting glucose')}: ${fmtGl(ds.glAyunas)} ${glU()} ${tx('promedio','avg')}`,
+      `🩸 ${tx('Glucosa posprandial','Post-meal glucose')}: ${fmtGl(ds.glPost)} ${glU()} ${tx('promedio','avg')}`,
+    ]:[]),
+    `💊 ${tx('Adherencia a medicamentos','Medication adherence')}: ${ds.med}% ${tx('promedio del período','period average')}`,
+  ];
+  if(outOfRange)lines.push('',tx('⚠️ Cifras promedio fuera de rango — revisar con el médico.','⚠️ Average readings out of range — please review with the doctor.'));
+  lines.push('',tx('Generado por VitalPulse Sync','Generated by VitalPulse Sync'));
+  return lines.join('\n');
+}
+// wa.me and mailto are plain links — no library, no backend, works on any phone.
+function shareLink(channel,period){
+  const msg=reportMessage(period);
+  if(channel==='whatsapp')return'https://wa.me/?text='+encodeURIComponent(msg);
+  return'mailto:?subject='+encodeURIComponent(tx('Reporte VitalPulse Sync','VitalPulse Sync Report'))+'&body='+encodeURIComponent(msg);
+}
+function genReport(){
+  const p=s.reportPeriod||'weekly';
+  if(p!=='weekly'&&!s.premium&&!s.trialActive){setState({showPaywall:true});return;}
+  // 6-month reports auto-send to family only — there's no WhatsApp/Email picker
+  // for that period (see rReports), so a shareChannel left over from a weekly/
+  // monthly report must never trigger a share-link popup here.
+  if(s.shareChannel&&p!=='sixmonth')window.open(shareLink(s.shareChannel,p),'_blank');
+  setState(st=>{const u={reportGenerated:true};if(p==='monthly')u.monthlyReport={l:tx('Resumen mensual','Monthly summary'),d:tx('Agosto 2026','August 2026')};if(p==='sixmonth')u.sixMonthReport={l:tx('Resumen de 6 meses','6-month summary'),d:tx('Mar–Ago 2026','Mar–Aug 2026')};return u;});
+}
+
+// Historical 7-day series for a saved report — shifts the same weekly demo shape
+// (already used elsewhere) so its average matches that period's REPORT_STATS figure.
+// A saved report is historical, so it is intentionally independent of the live
+// s.crisis demo toggle.
+// Glucose needs its ayunas-tagged and posprandial-tagged points shifted
+// INDEPENDENTLY so each sub-series' average matches its own REPORT_STATS target —
+// the non-consecutive ayunas/post positions from DEMO_GL_NORMAL are preserved.
+function reportSeries(period){
+  const t=REPORT_STATS[period]||REPORT_STATS.weekly;
+  const avg=a=>a.reduce((x,y)=>x+y,0)/a.length;
+  const shift=(a,target)=>a.map(v=>Math.round(v+(target-avg(a))));
+  const sysBase=DEMO_BP_NORMAL.map(d=>d.sys),diaBase=DEMO_BP_NORMAL.map(d=>d.dia);
+  const ayunasVals=DEMO_GL_NORMAL.filter(d=>d.ctx==='ayunas').map(d=>d.v);
+  const postVals=DEMO_GL_NORMAL.filter(d=>d.ctx==='post').map(d=>d.v);
+  const ayunasShifted=shift(ayunasVals,t.glAyunas),postShifted=shift(postVals,t.glPost);
+  let ai=0,pi=0;
+  const glA=DEMO_GL_NORMAL.map(d=>d.ctx==='post'?{v:postShifted[pi++],ctx:'post'}:{v:ayunasShifted[ai++],ctx:'ayunas'});
+  return{sysA:shift(sysBase,t.sys),diaA:shift(diaBase,t.dia),hrA:shift(DEMO_HR_NORMAL,t.hr),glA};
+}
+
+// Report-detail screen ("Ver" on a saved report) — reuses the same stat grid,
+// axis charts and adherence markup as Reportes/Historia so it looks and reads
+// exactly the same, with content gated by vitalsVisibility() as everywhere else.
+function rReportView(){
+  const vis=vitalsVisibility();
+  const cat=reportCatalog();
+  const rep=cat[s.viewReportIdx]||cat[0];
+  const period=rep.period;
+  const ds=REPORT_STATS[period]||REPORT_STATS.weekly;
+  const days=s.lang==='ES'?['L','M','X','J','V','S','D']:['M','T','W','T','F','S','S'];
+  const{sysA,diaA,hrA,glA}=reportSeries(period);
+  const meds=computeMeds();
+  // glA[i] is {v,ctx} — a day only ever has one context, so the table shows a
+  // dash in whichever column doesn't apply to that day's reading.
+  const rows=days.map((d,i)=>({d,sys:sysA[i],dia:diaA[i],hr:hrA[i],
+    glAyunas:glA[i].ctx==='ayunas'?glA[i].v:null,glPost:glA[i].ctx==='post'?glA[i].v:null}));
+  const glCtxSel=s.historyGlCtx||'ayunas';
+  const glPairs=glA.map((d,i)=>({...d,day:days[i]})).filter(p=>p.ctx===glCtxSel);
+  const glVals=glPairs.map(p=>p.v),glDays=glPairs.map(p=>p.day);
+  return`
+    <div class="card" style="background:linear-gradient(135deg,var(--indigo),var(--navy));padding:22px;text-align:center">
+      <div style="font-size:30px;margin-bottom:6px">📋</div>
+      <div style="font-size:17px;font-weight:800;color:#fff">${rep.l}</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.8);margin-top:2px">${rep.d}</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.65);margin-top:8px">${s.name} · ${diagLabel()}</div>
+    </div>
+    <div class="card" style="padding:4px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--bdr);border-radius:10px;overflow:hidden">
+        ${(()=>{const items=[
+          ...(vis.showBP?[{ic:'🫀',l:tx('Sistólica prom.','Avg Systolic'),v:ds.sys,u:'mmHg'},{ic:'🫀',l:tx('Diastólica prom.','Avg Diastolic'),v:ds.dia,u:'mmHg'}]:[]),
+          {ic:'❤️',l:tx('FC promedio','Avg Heart Rate'),v:ds.hr,u:'bpm'},
+          ...(vis.showGl?[{ic:'🩸',l:tx('Glucosa ayunas prom.','Avg Fasting Glucose'),v:fmtGl(ds.glAyunas),u:glU()},{ic:'🩸',l:tx('Glucosa posprandial prom.','Avg Post-meal Glucose'),v:fmtGl(ds.glPost),u:glU()},{ic:'🧪',l:tx('HbA1c estimada','Estimated HbA1c'),v:estHbA1c(ds.glAyunas,ds.glPost),u:'%'}]:[]),
+        ];return items.map((d,i)=>`<div style="background:var(--surf);text-align:center;padding:16px 8px;${items.length%2===1&&i===items.length-1?'grid-column:1/-1':''}">
+            <div style="font-size:15px;margin-bottom:5px">${d.ic}</div>
+            <div style="font-size:24px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums;line-height:1">${d.v}<span style="font-size:12px;font-weight:600;color:var(--text2)"> ${d.u}</span></div>
+            <div style="font-size:11.5px;font-weight:600;color:var(--text2);margin-top:5px">${d.l}</div>
+          </div>`).join('');})()}
+      </div>
+      ${vis.showGl?`<div style="font-size:10.5px;color:var(--text3);text-align:center;padding:8px 10px 2px">${tx('HbA1c estimada a partir de tu glucosa promedio (ecuación ADAG) — no reemplaza el examen de laboratorio.','Estimated HbA1c from your average glucose (ADAG equation) — not a substitute for the lab test.')}</div>`:''}
+    </div>
+    ${vis.showBP?`<div class="card">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">${tx('Presión Arterial','Blood Pressure')}</div>
+      <div style="overflow:visible">${lineSVG(sysA,diaA,days)}</div>
+    </div>`:''}
+    <div class="card">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">${tx('Frecuencia Cardíaca','Heart Rate')}</div>
+      <div style="overflow:visible">${hrHistSVG(hrA,days)}</div>
+    </div>
+    ${vis.showGl?`<div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:8px">
+        <div style="font-size:13px;font-weight:700;color:var(--text)">${tx('Glucosa','Glucose')}</div>
+        <div class="seg">
+          <button class="seg-btn ${glCtxSel==='ayunas'?'on':''}" onclick="setState({historyGlCtx:'ayunas'})">${tx('Ayunas','Fasting')}</button>
+          <button class="seg-btn ${glCtxSel==='post'?'on':''}" onclick="setState({historyGlCtx:'post'})">${tx('Posprandial','Post-meal')}</button>
+        </div>
+      </div>
+      ${glVals.length?`<div style="overflow:visible">${glucSVG(glVals,glGoalFor(glCtxSel),glDays)}</div>`:`<div style="padding:16px 0;text-align:center;font-size:12px;color:var(--text2)">${tx('Sin lecturas en este período para este contexto.','No readings in this period for this context.')}</div>`}
+    </div>`:''}
+    <div class="card">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px">${tx('Adherencia a medicamentos','Medication adherence')}</div>
+      ${!meds.length?`<div style="font-size:12px;color:var(--text2)">${tx('Sin medicamentos registrados.','No medications recorded.')}</div>`:meds.map(m=>`<div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text);margin-bottom:4px"><span>${m.name}</span><span><b>${ds.med}%</b></span></div>
+        <div class="ab"><div class="af ${ds.med<90?'warn':''}" style="width:${ds.med}%"></div></div>
+      </div>`).join('')}
+      <div style="font-size:10.5px;color:var(--text3);margin-top:2px">${tx('Adherencia promedio de este período — no cambia con las casillas de hoy.','Average adherence for this period — unaffected by today’s checkboxes.')}</div>
+    </div>
+    <div class="card">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px">${tx('Tabla detallada de lecturas','Detailed readings table')}</div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead><tr style="border-bottom:1.5px solid var(--bdr)">
+            <th style="text-align:left;padding:6px 4px;color:var(--text2);font-weight:600">${tx('Día','Day')}</th>
+            ${vis.showBP?`<th style="text-align:right;padding:6px 4px;color:var(--text2);font-weight:600">PA</th>`:''}
+            <th style="text-align:right;padding:6px 4px;color:var(--text2);font-weight:600">FC</th>
+            ${vis.showGl?`<th style="text-align:right;padding:6px 4px;color:var(--text2);font-weight:600">${tx('Gluc. ayunas','Fasting gluc.')}</th><th style="text-align:right;padding:6px 4px;color:var(--text2);font-weight:600">${tx('Gluc. posp.','Post-meal gluc.')}</th>`:''}
+          </tr></thead>
+          <tbody>
+            ${rows.map(r=>`<tr style="border-bottom:1px solid var(--bdr)">
+              <td style="padding:6px 4px;color:var(--text)">${r.d}</td>
+              ${vis.showBP?`<td style="text-align:right;padding:6px 4px;color:var(--text);font-variant-numeric:tabular-nums">${r.sys}/${r.dia}</td>`:''}
+              <td style="text-align:right;padding:6px 4px;color:var(--text);font-variant-numeric:tabular-nums">${r.hr}</td>
+              ${vis.showGl?`<td style="text-align:right;padding:6px 4px;color:var(--text);font-variant-numeric:tabular-nums">${r.glAyunas!=null?fmtGl(r.glAyunas):'—'}</td><td style="text-align:right;padding:6px 4px;color:var(--text);font-variant-numeric:tabular-nums">${r.glPost!=null?fmtGl(r.glPost):'—'}</td>`:''}
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card" style="text-align:center;padding:16px">
+      <button class="btn-s" disabled style="opacity:.5;cursor:not-allowed">${tx('📄 Descargar PDF (próximamente)','📄 Download PDF (coming soon)')}</button>
+      <div style="font-size:11px;color:var(--text2);margin-top:8px">${tx('Por ahora, comparte este resumen por WhatsApp o Email desde Reportes.','For now, share this summary via WhatsApp or Email from Reports.')}</div>
+    </div>`;
+}
+
+// ─── External dev controls ───────────────────────────────────────────────────
+function gotoScr(scr){if(scr==='log')openLog();else setState({screen:scr});}
+function setTheme(theme){
+  s.dark=theme==='dark';
+  document.documentElement.setAttribute('data-theme',theme);
+  document.getElementById('btn-lt').classList.toggle('on',theme==='light');
+  document.getElementById('btn-dk').classList.toggle('on',theme==='dark');
+}
+function setDemo(mode){
+  document.getElementById('btn-n').classList.remove('on','on-c');
+  document.getElementById('btn-e').classList.remove('on','on-c');
+  document.getElementById('btn-c').classList.remove('on','on-c');
+  if(mode==='n'){setState({noData:false,crisis:false,sys:118,dia:76,hr:68,glucose:108});document.getElementById('btn-n').classList.add('on');}
+  else if(mode==='e'){setState({noData:true,crisis:false,sys:0,dia:0,hr:0,glucose:0});document.getElementById('btn-e').classList.add('on');}
+  else{setState({noData:false,crisis:true,sys:185,dia:122,hr:118,glucose:285});document.getElementById('btn-c').classList.add('on-c');}
+}
+
+// ─── Main render ─────────────────────────────────────────────────────────────
+function render(){
+  const fullScreens=['onboarding','login','caregiverCode','caregiverFeed'];
+  const isFull=fullScreens.includes(s.screen);
+  const sel=document.getElementById('scr-sel');
+  if(sel&&!isFull)sel.value=s.screen;
+
+  // Same screen (and, for Perfil, same sub-view) as last render → restore where the
+  // user was scrolled to instead of snapping back to the top.
+  const scrKey=s.screen+'|'+(s.profileView||'');
+  const prevScr=root.querySelector('.scr');
+  if(prevScr)__scrollTop=prevScr.scrollTop;
+  const restoreScroll=scrKey===__scrKey;
+  __scrKey=scrKey;
+
+  if(isFull){
+    let fc='';
+    if(s.screen==='onboarding')fc=rOnboarding();
+    else if(s.screen==='login')fc=rLogin();
+    else if(s.screen==='caregiverCode')fc=rCaregiverCode();
+    else if(s.screen==='caregiverFeed'){root.innerHTML=rCaregiverFeed();return;}
+    root.innerHTML=`<div class="scr" style="display:flex;flex-direction:column">${fc}</div>`;
+    return;
+  }
+
+  let bodyHtml='';
+  if(s.screen==='dashboard')bodyHtml=rDashboard();
+  else if(s.screen==='log')bodyHtml=rLog();
+  else if(s.screen==='history')bodyHtml=rHistory();
+  else if(s.screen==='medications')bodyHtml=rMedications();
+  else if(s.screen==='reports')bodyHtml=rReports();
+  else if(s.screen==='reportView')bodyHtml=rReportView();
+  else if(s.screen==='profile')bodyHtml=rProfile();
+
+  root.innerHTML=`
+    ${rHeader()}
+    <div class="scr"><div class="pad">${bodyHtml}</div></div>
+    ${rTabs()}
+    ${s.showPaywall?rPaywall():''}
+    ${s.showAddMed?rAddMed():''}
+    ${s.deleteMedId?rDeleteMed():''}
+    ${s.openMedMenuId?`<div onclick="setState({openMedMenuId:null})" style="position:absolute;inset:0;z-index:100"></div>`:''}
+  `;
+  if(restoreScroll){
+    const newScr=root.querySelector('.scr');
+    if(newScr)newScr.scrollTop=__scrollTop;
+  }
+}
+
+// Por defecto la app abre en modo claro, sin importar la preferencia del sistema
+// operativo/navegador — antes, si el dispositivo tenía activado el modo oscuro,
+// la página heredaba modo oscuro automáticamente (vía prefers-color-scheme) sin
+// que nadie lo hubiera elegido dentro de la app. Ahora se fija modo claro al
+// cargar; el paciente puede cambiar a oscuro con el botón 🌙 cuando quiera.
+setTheme('light');
+render();
+</script>
+<script>
+// Registro del Service Worker — permite instalar la app y que funcione sin internet
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+</script>
