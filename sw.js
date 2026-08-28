@@ -1,5 +1,5 @@
 // Cambiar este nombre cada vez que se suba una nueva versión de la app
-const CACHE = 'vitalpulse-v1';
+const CACHE = 'vitalpulse-v2';
 const ASSETS = [
   './',
   './index.html',
