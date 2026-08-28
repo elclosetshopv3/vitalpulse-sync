@@ -54,9 +54,16 @@ body{background:var(--bg);display:flex;flex-direction:column;align-items:center;
   display:flex;flex-direction:column;
 }
 @media(max-width:430px){
-  #app-root{border-radius:0;box-shadow:none;width:100vw;height:100dvh;}
+  /* --vh la calcula un pequeño script más abajo (más confiable que 100dvh
+     en algunas versiones de Safari, que a veces no mide bien el alto justo
+     al cargar la página) — con respaldo a 100dvh si el script no corrió. */
+  #app-root{border-radius:0;box-shadow:none;width:100vw;height:100dvh;height:calc(var(--vh,1dvh) * 100);}
   #dev-ctrl{display:none;}
-  body{padding:0;}
+  body{padding:0;min-height:100dvh;min-height:calc(var(--vh,1dvh) * 100);}
+  /* En pantalla completa (sin los márgenes del "marco" de teléfono), el
+     encabezado queda pegado al borde superior real del dispositivo — se le
+     agrega el alto de la barra de estado/notch para que no quede encimado. */
+  .hdr{padding-top:calc(13px + env(safe-area-inset-top));}
 }
 /* Respaldo: esconde la barra de controles de desarrollo en cualquier
    dispositivo táctil (teléfono o tablet), sin importar el ancho reportado
@@ -1555,4 +1562,20 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   });
 }
+</script>
+<script>
+// Altura real de la pantalla, calculada con JS — algunas versiones de Safari
+// en iOS no miden bien "100dvh" justo al cargar la página o al mostrar/ocultar
+// su propia barra de herramientas, dejando un espacio en blanco abajo. Esto
+// lo corrige guardando el alto real en una variable CSS (--vh) que se
+// actualiza cada vez que cambia el tamaño visible.
+function setRealVH(){
+  document.documentElement.style.setProperty('--vh', (window.innerHeight * 0.01) + 'px');
+}
+setRealVH();
+window.addEventListener('resize', setRealVH);
+window.addEventListener('orientationchange', setRealVH);
+// Un segundo cálculo poco después de cargar, por si Safari todavía estaba
+// ajustando su barra de herramientas en el primer momento.
+setTimeout(setRealVH, 300);
 </script>
